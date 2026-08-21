@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fulcrum &middot; The RVx Index: Governing Microservice Granularity</title>
+<meta name="description" content="Fulcrum and the RVx Index: a quantitative, governed fitness function that measures whether a microservice boundary adds value or is a distributed monolith. The Khan Microservice Granularity Pattern.">
+<style>
+  :root{
+    --blue:#33518a; --blue2:#4364a8; --green:#2f6b2f; --amber:#b8860b; --red:#96393a;
+    --bg:#f5f7fb; --card:#ffffff; --ink:#1c2333; --muted:#5b6472; --line:#e2e8f2;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);line-height:1.6}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);
+      border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .brand{font-weight:800;font-size:18px;color:var(--blue);letter-spacing:.2px}
+  .brand span{color:var(--ink)}
+  .navlinks a{margin-left:20px;font-size:14px;font-weight:600;color:var(--muted)}
+  .navlinks a:hover{color:var(--blue);text-decoration:none}
+  .navlinks .cta{background:var(--blue);color:#fff;padding:8px 14px;border-radius:8px}
+  .topbar{background:#1c2333;color:#e6ecfa;font-size:13px}
+  .topbar .wrap{padding:8px 22px;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:center;text-align:center}
+  .topbar a{color:#9ec2ff;font-weight:700}
+  .topbar b{color:#fff}
+  @media(max-width:680px){.navlinks a{margin-left:12px;font-size:13px}.brand{font-size:16px}}
+
+  /* hero */
+  .hero{background:linear-gradient(135deg,#2b4576 0%,#33518a 55%,#3f68b0 100%);color:#fff;
+        padding:70px 0 80px;position:relative;overflow:hidden}
+  .hero:after{content:"";position:absolute;right:-120px;top:-120px;width:420px;height:420px;
+        background:radial-gradient(circle,rgba(255,255,255,.12),transparent 70%);border-radius:50%}
+  .hero h1{font-size:44px;margin:0 0 8px;line-height:1.12;font-weight:800}
+  .hero .sub{font-size:20px;opacity:.92;font-weight:500;margin:0 0 6px}
+  .hero .lede{font-size:16px;opacity:.85;max-width:680px;margin:16px 0 28px}
+  .pill{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);
+        padding:5px 12px;border-radius:20px;font-size:12.5px;font-weight:600;margin-bottom:18px}
+  .btns a{display:inline-block;margin:6px 10px 0 0;padding:12px 20px;border-radius:10px;font-weight:700;font-size:15px}
+  .btn-primary{background:#fff;color:var(--blue)}
+  .btn-ghost{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.6)}
+  @media(max-width:680px){.hero h1{font-size:32px}.hero .sub{font-size:17px}}
+
+  section{padding:56px 0}
+  section h2{font-size:28px;margin:0 0 6px;font-weight:800}
+  section .kick{color:var(--blue);font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+  section p.lead{color:var(--muted);font-size:16px;max-width:760px;margin:0 0 26px}
+
+  .grid{display:grid;gap:18px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:860px){.g3,.g2{grid-template-columns:1fr}}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;
+        transition:transform .15s ease,box-shadow .15s ease}
+  .card:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(30,45,80,.10)}
+  .card h3{margin:0 0 6px;font-size:18px}
+  .card p{margin:0;color:var(--muted);font-size:14.5px}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;margin-bottom:10px;color:#fff}
+
+  .signal{border-top:5px solid}
+  .sig-e{border-color:var(--blue)} .sig-s{border-color:var(--green)} .sig-l{border-color:var(--amber)}
+  .sig-icon{font-size:26px;font-weight:800;width:46px;height:46px;border-radius:12px;display:flex;
+            align-items:center;justify-content:center;color:#fff;margin-bottom:12px}
+
+  .formula{background:#0f1830;color:#e6ecfa;border-radius:12px;padding:18px 20px;font-family:ui-monospace,Consolas,monospace;
+           font-size:15px;text-align:center;margin:24px 0}
+  .formula .b{color:#7fd1a6} .formula .r{color:#e5a3a3} .formula .a{color:#e7c98a}
+
+  figure{margin:0}
+  .shot{width:100%;border:1px solid var(--line);border-radius:12px;background:#fff}
+  figcaption{color:var(--muted);font-size:13px;margin-top:8px}
+
+  .khan .card{border-left:4px solid var(--blue)}
+  .khan .tag{background:var(--blue)}
+
+  .band{display:inline-block;padding:4px 11px;border-radius:20px;color:#fff;font-weight:700;font-size:12.5px;margin-right:6px}
+  .b-red{background:var(--red)} .b-amber{background:var(--amber)} .b-green{background:var(--green)}
+
+  .cta-band{background:linear-gradient(135deg,#2f6b2f,#3f8a3f);color:#fff;border-radius:16px;padding:34px;text-align:center}
+  .cta-band h2{margin:0 0 8px} .cta-band p{opacity:.92;margin:0 0 18px}
+  .cta-band a{display:inline-block;background:#fff;color:var(--green);font-weight:800;padding:13px 26px;border-radius:10px}
+
+  .note{background:#fff7e6;border:1px solid #f0d9a0;border-radius:12px;padding:16px 18px;font-size:14px;color:#6b5518}
+  footer{border-top:1px solid var(--line);padding:30px 0;color:var(--muted);font-size:13px;background:#fff}
+  footer a{font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <span>Part of <b>Microservices Recipes &middot; The Architect's Field Guide</b> (free, open since 2017):</span>
+  <a href="https://vaquarkhan.github.io/microservices-recipes-a-free-gitbook/">Read online</a>
+  <span>&middot;</span>
+  <a href="https://github.com/vaquarkhan/microservices-recipes-a-free-gitbook">GitHub repo</a>
+</div></div>
+
+<nav><div class="wrap">
+  <div class="brand">Fulcrum <span>&middot; RVx</span></div>
+  <div class="navlinks">
+    <a href="#signals">The metric</a>
+    <a href="#khan">Khan family</a>
+    <a href="https://github.com/vaquarkhan/fulcrum-rvx">GitHub</a>
+    <a class="cta" href="calculator.html">Open calculator</a>
+  </div>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div class="pill">The Khan Microservice Granularity Pattern</div>
+  <h1>Is this boundary a microservice, or a distributed monolith?</h1>
+  <div class="sub">Fulcrum &amp; the RVx Index: measure it, don't argue it.</div>
+  <p class="lede">A quantitative, governed fitness function for microservice boundary granularity. It fuses
+    runtime efficiency, evolutionary independence, and team cognitive load into one bounded, diagnostic
+    score whose weakest component names the fix.</p>
+  <div class="btns">
+    <a class="btn-primary" href="calculator.html">&#9654; Try the live calculator</a>
+    <a class="btn-ghost" href="https://github.com/vaquarkhan/fulcrum-rvx">View code on GitHub</a>
+    <a class="btn-ghost" href="#paper">Read the paper</a>
+  </div>
+</div></header>
+
+<!-- Problem -->
+<section id="problem"><div class="wrap">
+  <div class="kick">The problem</div>
+  <h2>The Granularity Paradox</h2>
+  <p class="lead">Splitting a system to reduce complexity often increases it: a boundary drawn in the wrong
+    place turns an in-process call into a network call without removing the coupling that made the call
+    necessary. You pay the full cost of distribution and get none of the benefit. That is a
+    <b>distributed monolith</b>, and it usually looks fine on any single metric.</p>
+  <figure>
+    <img class="shot" src="figures/figure1_granularity_paradox.png" alt="The granularity paradox: a monolith call chain versus the same chain split into a distributed monolith">
+    <figcaption>A monolithic call chain (left) and the same chain cut into a distributed monolith (right): same coupling, now over the network.</figcaption>
+  </figure>
+</div></section>
+
+<!-- Signals -->
+<section id="signals" style="background:#eef2f9"><div class="wrap">
+  <div class="kick">The RVx Index</div>
+  <h2>Three signals, one diagnostic score</h2>
+  <p class="lead">No single layer sees a distributed monolith. RVx fuses three signals that live in three
+    different data planes, at the unit of one boundary, so the failure that hides from each one alone
+    becomes visible.</p>
+  <div class="grid g3">
+    <div class="card signal sig-e">
+      <div class="sig-icon" style="background:var(--blue)">E</div>
+      <h3>Kinetic Efficiency</h3>
+      <p>From distributed traces: useful work divided by total transaction time. Low E means the boundary is chatty and network-bound.</p>
+    </div>
+    <div class="card signal sig-s">
+      <div class="sig-icon" style="background:var(--green)">S</div>
+      <h3>Semantic Distinctness</h3>
+      <p>From version-control co-change: 1 means the two sides evolve independently; 0 means they always change together.</p>
+    </div>
+    <div class="card signal sig-l">
+      <div class="sig-icon" style="background:var(--amber)">L</div>
+      <h3>Cognitive Load</h3>
+      <p>Static complexity normalized against team capacity, Conway's Law made measurable. Can the owning team actually hold it?</p>
+    </div>
+  </div>
+  <div class="formula">
+    RVx<sub>raw</sub> = ( E<span class="b">^&beta;</span> &times; S ) / ( L<span class="a">^&alpha;</span> + &epsilon; )
+    &nbsp;&nbsp;&rarr;&nbsp;&nbsp; RVx = RVx<sub>raw</sub> / (1 + RVx<sub>raw</sub>)
+  </div>
+  <p class="lead" style="margin-bottom:0">Interpreted against three bands:
+    <span class="band b-red">below 0.4 &middot; distributed monolith</span>
+    <span class="band b-amber">0.4&ndash;0.7 &middot; at risk</span>
+    <span class="band b-green">above 0.7 &middot; optimal</span>
+    <br><small style="color:var(--muted)">(illustrative defaults, calibrated per domain). A low score's weakest component names the remedy.</small></p>
+</div></section>
+
+<!-- Khan family -->
+<section id="khan" class="khan"><div class="wrap">
+  <div class="kick">The named contributions</div>
+  <h2>The Khan family</h2>
+  <p class="lead">A small, coherent family of named ideas for governing microservice granularity. The
+    borrowed primitives (coupling, cohesion, Conway's Law, sagas) are credited in the paper; what is new
+    is the synthesis.</p>
+  <div class="grid g2">
+    <div class="card"><span class="tag">Law</span>
+      <h3>Khan's Law of Service Granularity</h3>
+      <p>A boundary is only as valuable as its weakest dimension. Distribution multiplies value when a boundary is efficient, independent, and ownable at once, and multiplies cost wherever any one fails.</p></div>
+    <div class="card"><span class="tag">Pattern</span>
+      <h3>The Khan Microservice Granularity Pattern (Fulcrum)</h3>
+      <p>The umbrella method: a sense&ndash;decide&ndash;actuate&ndash;verify loop that turns the RVx score into a governed, gated decision, from a pull-request advisory to a CI/CD fitness gate.</p></div>
+    <div class="card"><span class="tag">Metric</span>
+      <h3>The RVx Index</h3>
+      <p>The bounded, diagnostic composite of E, S, and L, with proved structural properties and a normalization that makes thresholds portable across systems.</p></div>
+    <div class="card"><span class="tag">Model</span>
+      <h3>KM3: Khan Microservice Maturity Model</h3>
+      <p>Applies RVx at portfolio scale so leadership can govern granularity across a whole estate, with an incident-freeze rule that keeps it an assessment, not a marketing ladder.</p></div>
+    <div class="card"><span class="tag">Score</span>
+      <h3>Saga Complexity Score (SCS)</h3>
+      <p>Turns the qualitative choreography-versus-orchestration choice into a repeatable score from transaction complexity, business risk, and cross-service interactions.</p></div>
+    <div class="card"><span class="tag">Extension</span>
+      <h3>RVx-A &amp; the Mirroring Corollary</h3>
+      <p>The same three-signal form reinterpreted for AI-agent tool boundaries under the Model Context Protocol: an over-tooled agent is a distributed monolith of tools. Proposed, not yet validated.</p></div>
+    <div class="card"><span class="tag">Concept</span>
+      <h3>The Granularity Paradox</h3>
+      <p>Splitting to reduce complexity increases it when a boundary turns an in-process call into a network call without removing the coupling. Detectable only by reading all three signals together.</p></div>
+    <div class="card"><span class="tag">Definition</span>
+      <h3>Operational definition of a microservice</h3>
+      <p>A boundary earns the name when its value (the joint product of efficiency, independence, and ownability) clearly exceeds the distributed complexity it introduces; one that fails this is a distributed-monolith fragment in function.</p></div>
+    <div class="card"><span class="tag">Cost model</span>
+      <h3>Distributed-Monolith Cost (DMC)</h3>
+      <p>Prices the failure Khan's Law names, with a measurable core, the wasted transaction-time W = N &times; t &times; (1 &minus; E), computed from the same traces as E, plus an illustrative dollar overlay.</p></div>
+    <div class="card"><span class="tag">Pattern (agentic)</span>
+      <h3>Adaptive Tool Surfacing</h3>
+      <p>Turn tool selection into a governed loop: keep the agent's context load below its collapse threshold by surfacing only the relevant tool subset per query, then verify by task success.</p></div>
+  </div>
+  <p style="margin-top:18px"><a href="calculator.html">&#9654; Explore RVx, RVx-A, and SCS interactively in the calculator &rarr;</a></p>
+
+  <h3 style="margin-top:34px">Complete novelty register (every named contribution)</h3>
+  <p class="lead">The full set defined in Appendix E of the paper. The primitives it builds on (coupling,
+    cohesion, Conway's Law, sagas) are prior work and credited; what is new is the synthesis.</p>
+  <div style="overflow-x:auto">
+  <table style="width:100%;border-collapse:collapse;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden">
+    <tr style="background:#eef2f9;text-align:left"><th style="padding:10px 12px">ID</th><th>Contribution</th><th>What it is</th><th>Where</th></tr>
+    <tr><td style="padding:9px 12px"><b>Law</b></td><td>Khan's Law of Service Granularity</td><td>A boundary is only as valuable as its weakest dimension.</td><td>Sec 3, App E.0</td></tr>
+    <tr><td style="padding:9px 12px"><b>Corollary</b></td><td>Khan's Mirroring Corollary (agentic)</td><td>An agent's reliability mirrors the structure of its tool surface.</td><td>Sec 11.5, E.0</td></tr>
+    <tr><td style="padding:9px 12px">D1</td><td>The Granularity Paradox</td><td>Decomposition that increases complexity by turning calls into network hops without removing coupling.</td><td>Sec 3</td></tr>
+    <tr><td style="padding:9px 12px">D2</td><td>The RVx Index</td><td>Bounded, diagnostic composite of E, S, and L, with proved properties and portable thresholds.</td><td>Sec 5</td></tr>
+    <tr><td style="padding:9px 12px">D3</td><td>Soft weakest-link boundary scoring</td><td>The multiplicative form where a near-zero component collapses the score; proved.</td><td>Sec 6, Prop 3</td></tr>
+    <tr><td style="padding:9px 12px">D4</td><td>Operational definition of a microservice</td><td>Value exceeds distributed complexity, or it is a distributed-monolith fragment in function.</td><td>Sec 5.8</td></tr>
+    <tr><td style="padding:9px 12px">D5</td><td>The Fulcrum loop</td><td>Sense&ndash;decide&ndash;actuate&ndash;verify governance that turns the score into a gated decision.</td><td>Sec 8</td></tr>
+    <tr><td style="padding:9px 12px">D6</td><td>Saga Complexity Score (SCS)</td><td>Quantifies the choreography-versus-orchestration choice for a transaction.</td><td>Sec 9</td></tr>
+    <tr><td style="padding:9px 12px">D7</td><td>KM3: Khan Microservice Maturity Model</td><td>Applies RVx at portfolio scale to govern granularity across an estate.</td><td>Sec 10</td></tr>
+    <tr><td style="padding:9px 12px">D8</td><td>Distributed-Monolith Cost (DMC)</td><td>Prices the failure Khan's Law names; measurable wasted-time core plus dollar overlay.</td><td>Sec 18.5</td></tr>
+    <tr><td style="padding:9px 12px">D9</td><td>The Khan Microservice Granularity Pattern</td><td>The umbrella method under which D2&ndash;D8 compose (a.k.a. Fulcrum).</td><td>App E.1</td></tr>
+    <tr><td style="padding:9px 12px">D10</td><td>RVx-A and its reinterpreted signals</td><td>The three-signal form for AI-agent / MCP tool boundaries (proposed).</td><td>Sec 11.5</td></tr>
+    <tr><td style="padding:9px 12px">D11</td><td>Model-tool mirroring hypothesis</td><td>Conway's Law generalized from teams to models (conjecture).</td><td>Sec 11.5</td></tr>
+    <tr><td style="padding:9px 12px">D12</td><td>Verified Agentic Action pattern</td><td>Propose action + declared effect, verify actual against declared, commit only on pass (proposed).</td><td>Sec 11.6</td></tr>
+    <tr><td style="padding:9px 12px">D13</td><td>Adaptive Tool Surfacing (+ tool-boundary gating, KM3-A)</td><td>Governed retrieval that keeps agent context load below the collapse threshold (proposed).</td><td>Sec 11.7</td></tr>
+  </table>
+  </div>
+  <p class="lead" style="margin-top:14px">Guidance for applying each is in the paper section shown, and the
+    <a href="https://github.com/vaquarkhan/fulcrum-rvx/blob/main/PRACTITIONER-GUIDANCE.md">practitioner one-pager</a>;
+    how to measure E, S, and L is built into the <a href="calculator.html">calculator</a>.</p>
+</div></section>
+
+<!-- Governance loop + AWS -->
+<section id="loop" style="background:#eef2f9"><div class="wrap">
+  <div class="grid g2" style="align-items:center">
+    <div>
+      <div class="kick">Governance</div>
+      <h2>Sense, decide, actuate, verify</h2>
+      <p class="lead">Fulcrum is a closed loop: sense the three signals per boundary, decide against a
+        calibrated band, actuate as an advisory or a safety-gated change, and verify the effect before it
+        is trusted. It runs as a fitness function in CI/CD, so new distributed monoliths are caught before
+        they ship.</p>
+    </div>
+    <figure><img class="shot" src="figures/figure4_fulcrum_loop.png" alt="The Fulcrum sense-decide-actuate-verify governance loop"></figure>
+  </div>
+  <div class="grid g2" style="align-items:center;margin-top:34px">
+    <figure><img class="shot" src="figures/figure10_aws_validation.png" alt="Real-AWS validation: AUC per domain and cross-domain robustness"></figure>
+    <div>
+      <div class="kick">Evidence</div>
+      <h2>Validated on real AWS</h2>
+      <p class="lead">On a replicated 36-boundary AWS Lambda deployment, each signal tracked its own
+        independent outcome (E&harr;latency, L&harr;cost, S&harr;errors) and a fused composite was the most
+        robust scorer across domains. The full harness is open-source and reproducible.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- Try it CTA -->
+<section><div class="wrap">
+  <div class="cta-band">
+    <h2>Score your own boundaries now</h2>
+    <p>Move three sliders, or paste your services as <code>name,E,S,L</code> and rank them. All math matches the paper. No install, runs in your browser.</p>
+    <a href="calculator.html">Open the RVx calculator &rarr;</a>
+  </div>
+</div></section>
+
+<!-- Paper / status -->
+<section id="paper" style="background:#eef2f9"><div class="wrap">
+  <div class="kick">Read &amp; cite</div>
+  <h2>The paper</h2>
+  <p class="lead"><b>Fulcrum: Quantitative, Governed Granularity for Microservice Boundaries with the RVx Index.</b>
+    Viquar Khan, 2026. ORCID 0009-0008-3592-4162.</p>
+  <p class="lead"><a href="#">arXiv (link coming soon)</a> &nbsp;&middot;&nbsp;
+    <a href="https://github.com/vaquarkhan/fulcrum-rvx">Code &amp; reproduction on GitHub</a> &nbsp;&middot;&nbsp;
+    <a href="https://github.com/vaquarkhan/fulcrum-rvx/blob/main/PRACTITIONER-GUIDANCE.md">Practitioner one-pager</a></p>
+  <p class="lead" style="margin-top:8px"><b>Provenance.</b> This is the rigorous research treatment of ideas
+    the author has developed openly since 2017 in the free field guide
+    Microservices Recipes &middot; The Architect's Field Guide
+    (<a href="https://vaquarkhan.github.io/microservices-recipes-a-free-gitbook/">read online</a>
+    &middot; <a href="https://github.com/vaquarkhan/microservices-recipes-a-free-gitbook">GitHub</a>),
+    where Fulcrum appears as the Adaptive Granularity Governance chapter.</p>
+  <div class="note">
+    <b>Honest status.</b> RVx is a fitness function for boundary <i>granularity</i>, not a comprehensive
+    quality gate (it does not measure resilience, security, or contract coverage). It is validated on
+    controlled simulations and a real-AWS deployed benchmark, and is pre-validation on organic
+    production. The paper states exactly what is proved, demonstrated, and hypothesized.
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  Copyright &copy; 2026 Viquar Khan. Fulcrum and The Khan Microservice Granularity Pattern.
+  Code under Apache-2.0, documentation and figures under CC BY 4.0. Developed openly since 2017.
+  &nbsp;&middot;&nbsp; <a href="https://github.com/vaquarkhan/fulcrum-rvx">GitHub</a>
+  &nbsp;&middot;&nbsp; <a href="https://github.com/vaquarkhan/microservices-recipes-a-free-gitbook">Microservices Recipes (free book)</a>
+  &nbsp;&middot;&nbsp; <a href="calculator.html">Calculator</a>
+  &nbsp;&middot;&nbsp; <a href="https://orcid.org/0009-0008-3592-4162">ORCID</a>
+</div></footer>
+
+</body>
+</html>
