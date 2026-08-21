@@ -1,0 +1,5 @@
+# Core experiments (exp1-3, fulcrum_core, testbed) are dependency-free (Python 3.10+ stdlib).
+# The packages below are only needed for the optional parts noted.
+
+matplotlib>=3.7    # figure rendering (generate_figures.py, make_aws_figure.py)
+boto3>=1.28        # real-AWS validation + pipeline scripts (code/aws-*-validation/)

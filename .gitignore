@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local experiment / build artifacts
+_git_estate/
+*.log
+build/
+
+# Do NOT commit cloud credentials or account-specific outputs
+*.pem
+*aws-credentials*
+.aws/

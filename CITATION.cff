@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use Fulcrum or the RVx Index, please cite this work."
+title: "Fulcrum: Quantitative, Governed Granularity for Microservice Boundaries with the RVx Index"
+authors:
+  - family-names: Khan
+    given-names: Viquar
+    orcid: "https://orcid.org/0009-0008-3592-4162"
+    email: vaquar.khan@gmail.com
+type: software
+version: "2.0"
+date-released: "2026-08-21"
+license: Apache-2.0
+url: "https://github.com/vaquarkhan/fulcrum-rvx"
+keywords:
+  - microservices
+  - service granularity
+  - distributed monolith
+  - software architecture
+  - architecture fitness function
+  - domain-driven design
+  - software metrics
+  - Conway's Law
+abstract: >
+  Fulcrum and the RVx Index provide a quantitative, governed fitness function for microservice
+  boundary granularity. RVx fuses three signals, Kinetic Efficiency (runtime overhead from traces),
+  Semantic Distinctness (evolutionary independence from version-control co-change), and Cognitive Load
+  (complexity normalized against team capacity), into one bounded, diagnostic, per-boundary score
+  whose weakest component names the remedy. The score is embedded in a sense-decide-actuate-verify
+  governance loop that can run as a CI/CD fitness gate. The work contributes the metric, its proved
+  structural properties, a measurement architecture, an adversarial and conformance treatment, a
+  reproducible evaluation protocol, and a replicated real-AWS deployed-benchmark validation.

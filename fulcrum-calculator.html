@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fulcrum RVx Calculator</title>
+<style>
+  :root{
+    --blue:#33518a; --green:#2f6b2f; --amber:#b8860b; --red:#96393a;
+    --bg:#f6f8fc; --card:#ffffff; --ink:#1e2430; --muted:#5b6472; --line:#dce3ef;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);line-height:1.5}
+  header{background:var(--blue);color:#fff;padding:22px 26px}
+  header h1{margin:0;font-size:22px}
+  header p{margin:6px 0 0;opacity:.9;font-size:13px}
+  .wrap{max-width:960px;margin:0 auto;padding:22px}
+  .tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+  .tab{padding:9px 16px;border:1px solid var(--line);background:var(--card);border-radius:8px;
+       cursor:pointer;font-size:14px;font-weight:600;color:var(--muted)}
+  .tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px;margin-bottom:18px}
+  .row{display:flex;align-items:center;gap:14px;margin:16px 0}
+  .row label{width:230px;font-weight:600;font-size:14px}
+  .row .desc{font-size:12px;color:var(--muted);font-weight:400}
+  input[type=range]{flex:1;accent-color:var(--blue)}
+  .val{width:54px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+  .score{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+  .gauge{flex:1;min-width:260px}
+  .bar{height:26px;border-radius:13px;background:linear-gradient(90deg,#e0b3b3 0%,#e0b3b3 40%,#e7d3a3 40%,#e7d3a3 70%,#b6d6b6 70%,#b6d6b6 100%);position:relative}
+  .needle{position:absolute;top:-6px;width:4px;height:38px;background:#111;border-radius:2px;transform:translateX(-2px)}
+  .bigscore{font-size:46px;font-weight:800;font-variant-numeric:tabular-nums}
+  .band{display:inline-block;padding:5px 12px;border-radius:20px;color:#fff;font-weight:700;font-size:13px}
+  .diag{margin-top:16px;padding:14px 16px;border-radius:10px;background:#f0f4fb;border:1px solid var(--line);font-size:14px}
+  .diag b{color:var(--blue)}
+  .components{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .chip{flex:1;min-width:150px;background:#f0f4fb;border:1px solid var(--line);border-radius:10px;padding:12px}
+  .chip .k{font-size:12px;color:var(--muted)}
+  .chip .v{font-size:22px;font-weight:700}
+  .note{font-size:12px;color:var(--muted);margin-top:10px}
+  .formula{font-family:ui-monospace,Consolas,monospace;background:#f0f4fb;padding:8px 10px;border-radius:8px;font-size:13px;display:inline-block}
+  footer{max-width:960px;margin:0 auto;padding:10px 22px 40px;color:var(--muted);font-size:12px}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>Fulcrum &middot; RVx Boundary Health Calculator</h1>
+  <p>The Khan Microservice Granularity Pattern. Move the sliders to see whether a boundary adds value or is a distributed monolith. All math matches the paper exactly.</p>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <div class="tab active" data-tab="rvx">Microservice boundary (RVx)</div>
+    <div class="tab" data-tab="agent">AI agent tools (RVx-A)</div>
+    <div class="tab" data-tab="saga">Transaction topology (SCS)</div>
+    <div class="tab" data-tab="csv">Score real services (CSV)</div>
+  </div>
+
+  <!-- RVx -->
+  <div id="rvx" class="card">
+    <div class="row"><label>Kinetic Efficiency (E)<div class="desc">useful work / total time. 1 = no overhead.</div></label>
+      <input type="range" id="E" min="0" max="1" step="0.01" value="0.6"><span class="val" id="Ev">0.60</span></div>
+    <div class="row"><label>Semantic Distinctness (S)<div class="desc">1 = evolves independently. 0 = always changes with neighbors.</div></label>
+      <input type="range" id="S" min="0" max="1" step="0.01" value="0.6"><span class="val" id="Sv">0.60</span></div>
+    <div class="row"><label>Cognitive Load (L)<div class="desc">0 = easy for the team. 1 = overwhelming.</div></label>
+      <input type="range" id="L" min="0" max="1" step="0.01" value="0.4"><span class="val" id="Lv">0.40</span></div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <div class="score">
+      <div><div class="bigscore" id="rvxScore">0.00</div><span class="band" id="rvxBand">-</span></div>
+      <div class="gauge"><div class="bar"><div class="needle" id="rvxNeedle" style="left:0%"></div></div>
+        <div class="note">Bands: below 0.4 distributed monolith &middot; 0.4 to 0.7 at risk &middot; above 0.7 optimal (illustrative defaults, calibrated per domain).</div></div>
+    </div>
+    <div class="diag" id="rvxDiag"></div>
+    <div class="note">Formula: <span class="formula">RVx = raw / (1 + raw), raw = (E^1.2 &times; S) / (L^0.8 + 0.1)</span></div>
+  </div>
+
+  <!-- Agentic -->
+  <div id="agent" class="card hidden">
+    <div class="row"><label>Number of tools shown (n)<div class="desc">how many tools the agent must choose among.</div></label>
+      <input type="range" id="n" min="1" max="200" step="1" value="20"><span class="val" id="nv">20</span></div>
+    <div class="row"><label>Tool Distinctness (S_a)<div class="desc">1 = no overlapping/redundant tools.</div></label>
+      <input type="range" id="Sa" min="0.1" max="1" step="0.01" value="0.9"><span class="val" id="Sav">0.90</span></div>
+    <div class="row"><label>Token Efficiency (E_a)<div class="desc">1 = little prompt bloat / few round-trips.</div></label>
+      <input type="range" id="Ea" min="0.1" max="1" step="0.01" value="0.9"><span class="val" id="Eav">0.90</span></div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <div class="score">
+      <div><div class="bigscore" id="aScore">0.00</div><span class="band" id="aBand">-</span></div>
+      <div class="gauge"><div class="bar"><div class="needle" id="aNeedle" style="left:0%"></div></div>
+        <div class="note">Higher is a healthier tool boundary. Agent Context Load L_a rises with tool count.</div></div>
+    </div>
+    <div class="components">
+      <div class="chip"><div class="k">Agent Context Load (L_a)</div><div class="v" id="La">-</div></div>
+      <div class="chip"><div class="k">Modeled selection accuracy</div><div class="v" id="acc">-</div></div>
+    </div>
+    <div class="diag" id="aDiag"></div>
+    <div class="note">Accuracy model calibrated to published tool-selection-collapse data (RAG-MCP, tool-count studies). Illustrative, not a live LLM.</div>
+  </div>
+
+  <!-- Saga -->
+  <div id="saga" class="card hidden">
+    <div class="row"><label>Transaction complexity (C)<div class="desc">0 simple, 1 deeply branched.</div></label>
+      <input type="range" id="C" min="0" max="1" step="0.01" value="0.5"><span class="val" id="Cv">0.50</span></div>
+    <div class="row"><label>Business risk (R)<div class="desc">0 low stakes, 1 financial/compliance.</div></label>
+      <input type="range" id="R" min="0" max="1" step="0.01" value="0.5"><span class="val" id="Rv">0.50</span></div>
+    <div class="row"><label>Service interactions (i)<div class="desc">number of steps across services.</div></label>
+      <input type="range" id="i" min="1" max="30" step="1" value="4"><span class="val" id="iv">4</span></div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <div class="score">
+      <div><div class="bigscore" id="scsScore">0.00</div><span class="band" id="scsBand">-</span></div>
+      <div class="gauge"><div class="note" id="scsAdvice"></div></div>
+    </div>
+    <div class="note">Formula: <span class="formula">SCS = C &times; R &times; i/(i+5)</span>. Higher favors a central orchestrator; lower favors event choreography.</div>
+  </div>
+
+  <!-- CSV -->
+  <div id="csv" class="card hidden">
+    <p style="margin-top:0">Paste one boundary per line as <b>name,E,S,L</b> (values 0 to 1), or load a CSV file. A header row is optional. This scores your real boundaries and ranks them.</p>
+    <textarea id="csvText" style="width:100%;height:120px;font-family:ui-monospace,Consolas,monospace;font-size:13px;border:1px solid var(--line);border-radius:8px;padding:10px">
+name,E,S,L
+checkout-pricing,0.28,0.35,0.55
+notification,0.90,0.95,0.15
+catalog-read,0.82,0.88,0.25
+legacy-orders,0.32,0.45,0.70</textarea>
+    <div class="row" style="margin-top:10px">
+      <input type="file" id="csvFile" accept=".csv,.txt">
+      <button id="csvRun" style="padding:9px 18px;border:none;background:var(--blue);color:#fff;border-radius:8px;font-weight:600;cursor:pointer">Score boundaries</button>
+    </div>
+    <div id="csvOut" style="margin-top:10px"></div>
+    <div class="note">RVx uses your measured E, S, L. Export the scores by copying the table. Thresholds are illustrative defaults.</div>
+  </div>
+</div>
+
+<footer>
+  Fulcrum: The Khan Microservice Granularity Pattern &copy; 2026 Viquar Khan. Companion to the research paper in this bundle.
+  Scores are diagnostic aids; thresholds are illustrative defaults pending per-domain calibration.
+</footer>
+
+<script>
+function clamp(x){return Math.max(0,Math.min(1,x));}
+function rvx(E,S,L){var raw=(Math.pow(E,1.2)*S)/(Math.pow(L,0.8)+0.1);return raw/(1+raw);}
+function band(s){if(s>0.7)return['Optimal boundary','#2f6b2f'];if(s>=0.4)return['At risk','#b8860b'];return['Distributed monolith','#96393a'];}
+function weakest(E,S,L){var m={'efficiency (E)':E,'distinctness (S)':S,'low load':1-L};var k=Object.keys(m).reduce((a,b)=>m[a]<m[b]?a:b);return k;}
+
+function tab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  ['rvx','agent','saga','csv'].forEach(id=>document.getElementById(id).classList.toggle('hidden',id!==name));
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>tab(t.dataset.tab)));
+
+function updRvx(){
+  var E=+E_.value,S=+S_.value,L=+L_.value;
+  Ev.textContent=E.toFixed(2);Sv.textContent=S.toFixed(2);Lv.textContent=L.toFixed(2);
+  var s=rvx(E,S,L);var b=band(s);
+  rvxScore.textContent=s.toFixed(2);rvxBand.textContent=b[0];rvxBand.style.background=b[1];
+  rvxNeedle.style.left=(s*100)+'%';
+  var w=weakest(E,S,L);var fix='';
+  if(w==='efficiency (E)')fix='mostly network/overhead. Merge the two services or make the interaction asynchronous.';
+  else if(w==='distinctness (S)')fix='it changes together with its neighbor. Re-cut along the true seam or merge.';
+  else fix='too complex for the owning team. Simplify the surface or reassign ownership.';
+  rvxDiag.innerHTML='Weakest dimension: <b>'+w+'</b>. Diagnosis: '+fix;
+}
+var E_=document.getElementById('E'),S_=document.getElementById('S'),L_=document.getElementById('L');
+[E_,S_,L_].forEach(el=>el.addEventListener('input',updRvx));
+
+function acc(n,Sa){var neff=n*(1+1.5*(1-Sa));return 1/(1+Math.pow(neff/45,2.2));}
+function updAgent(){
+  var n=+n_.value,Sa=+Sa_.value,Ea=+Ea_.value;
+  nv.textContent=n;Sav.textContent=Sa.toFixed(2);Eav.textContent=Ea.toFixed(2);
+  var La=clamp(n/60);var s=rvx(Ea,Sa,La);var b=band(s);var a=acc(n,Sa);
+  aScore.textContent=s.toFixed(2);aBand.textContent=b[0];aBand.style.background=b[1];
+  aNeedle.style.left=(s*100)+'%';
+  document.getElementById('La').textContent=La.toFixed(2);
+  document.getElementById('acc').textContent=(a*100).toFixed(0)+'%';
+  var d='';
+  if(n>60)d='Too many tools: the agent is past the collapse point. Surface a smaller relevant subset (Adaptive Tool Surfacing).';
+  else if(Sa<0.6)d='Redundant, overlapping tools. Merge duplicates to sharpen selection.';
+  else d='Healthy tool boundary. The agent can reliably choose.';
+  aDiag.innerHTML='<b>'+d+'</b>';
+}
+var n_=document.getElementById('n'),Sa_=document.getElementById('Sa'),Ea_=document.getElementById('Ea');
+[n_,Sa_,Ea_].forEach(el=>el.addEventListener('input',updAgent));
+
+function updSaga(){
+  var C=+C_.value,R=+R_.value,i=+i_.value;
+  Cv.textContent=C.toFixed(2);Rv.textContent=R.toFixed(2);iv.textContent=i;
+  var scs=C*R*(i/(i+5));
+  scsScore.textContent=scs.toFixed(2);
+  var opt=scs>=0.25;
+  scsBand.textContent=opt?'Use orchestration':'Use choreography';
+  scsBand.style.background=opt?'#33518a':'#2f6b2f';
+  scsAdvice.innerHTML=opt
+    ?'High complexity/risk/interaction: use a central <b>orchestrator</b> (state machine, audit trail, compensation).'
+    :'Low complexity/risk: let services react to events (<b>choreography</b>, decentralized).';
+}
+var C_=document.getElementById('C'),R_=document.getElementById('R'),i_=document.getElementById('i');
+[C_,R_,i_].forEach(el=>el.addEventListener('input',updSaga));
+
+function scoreCsv(){
+  var txt=document.getElementById('csvText').value.trim();
+  var rows=[];
+  txt.split(/\r?\n/).forEach(function(line){
+    var parts=line.split(',').map(function(x){return x.trim();});
+    if(parts.length<4) return;
+    var name=parts[0]; var E=parseFloat(parts[1]),S=parseFloat(parts[2]),L=parseFloat(parts[3]);
+    if(isNaN(E)||isNaN(S)||isNaN(L)) return; // skips header
+    rows.push({name:name,E:clamp(E),S:clamp(S),L:clamp(L),rvx:rvx(clamp(E),clamp(S),clamp(L))});
+  });
+  rows.sort(function(a,b){return b.rvx-a.rvx;});
+  if(!rows.length){document.getElementById('csvOut').innerHTML='<div class="note">No valid rows found. Use name,E,S,L.</div>';return;}
+  var h='<table style="width:100%;border-collapse:collapse;font-size:14px"><tr style="text-align:left;border-bottom:2px solid var(--line)"><th style="padding:6px">Boundary</th><th>E</th><th>S</th><th>L</th><th>RVx</th><th>Band</th><th>Weakest</th></tr>';
+  rows.forEach(function(r){
+    var b=band(r.rvx); var w=weakest(r.E,r.S,r.L);
+    h+='<tr style="border-bottom:1px solid var(--line)"><td style="padding:6px">'+r.name+'</td><td>'+r.E.toFixed(2)+'</td><td>'+r.S.toFixed(2)+'</td><td>'+r.L.toFixed(2)+'</td><td><b>'+r.rvx.toFixed(3)+'</b></td><td><span class="band" style="background:'+b[1]+';font-size:11px;padding:2px 8px">'+b[0]+'</span></td><td>'+w+'</td></tr>';
+  });
+  h+='</table>';
+  document.getElementById('csvOut').innerHTML=h;
+}
+document.getElementById('csvRun').addEventListener('click',scoreCsv);
+document.getElementById('csvFile').addEventListener('change',function(e){
+  var f=e.target.files[0]; if(!f)return; var rd=new FileReader();
+  rd.onload=function(){document.getElementById('csvText').value=rd.result;scoreCsv();};
+  rd.readAsText(f);
+});
+
+updRvx();updAgent();updSaga();scoreCsv();
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+Documentation, paper text, and figures license
+================================================
+
+The research paper (Fulcrum-RVx-Research-Paper-*.md / .docx), the figures in figures/, the
+PRACTITIONER-GUIDANCE.md, and other prose documentation in this repository are licensed under the
+
+    Creative Commons Attribution 4.0 International License (CC BY 4.0)
+    https://creativecommons.org/licenses/by/4.0/
+
+You are free to share and adapt this material for any purpose, including commercially, provided you
+give appropriate credit to the author (Viquar Khan), link to the license, and indicate if changes
+were made.
+
+Suggested attribution:
+  "Fulcrum: Quantitative, Governed Granularity for Microservice Boundaries with the RVx Index,"
+  Viquar Khan, 2026, licensed under CC BY 4.0. ORCID 0009-0008-3592-4162.
+
+The source code in this repository (code/, fulcrum-calculator.html, and other software) is licensed
+separately under the Apache License 2.0; see the LICENSE file.
