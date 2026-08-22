@@ -1,0 +1,7 @@
+service,E,label
+standalone,1.0,1
+aggregator,0.284,1
+reporter,0.312,1
+chatty-a,0.019,0
+chatty-b,0.007,0
+coupled,0.005,0

@@ -1,0 +1,9 @@
+service,S,L
+spring-petclinic-api-gateway,0.172,0.437
+spring-petclinic-customers-service,0.035,0.31
+spring-petclinic-visits-service,0.012,0.174
+spring-petclinic-vets-service,0.013,0.2
+spring-petclinic-config-server,0.097,0.066
+spring-petclinic-discovery-server,0.0,0.065
+spring-petclinic-admin-server,0.151,0.064
+spring-petclinic-genai-service,0.2,0.273
