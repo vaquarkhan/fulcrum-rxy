@@ -47,18 +47,41 @@
   .how a{color:var(--blue);font-weight:600}
   footer{max-width:960px;margin:0 auto;padding:10px 22px 40px;color:var(--muted);font-size:12px}
   .hidden{display:none}
+  .btn{padding:9px 18px;border:none;background:var(--blue);color:#fff;border-radius:8px;font-weight:600;cursor:pointer}
+  .btn.secondary{background:#fff;color:var(--blue);border:1px solid var(--line)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .presets{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+  .presets button{padding:7px 12px;border:1px solid var(--line);background:#fff;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
+  .presets button:hover{border-color:var(--blue);color:var(--blue)}
+  .num{width:110px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-variant-numeric:tabular-nums}
+  .csv-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+  .table-wrap{overflow-x:auto;margin-top:10px}
+  table.score-table{width:100%;border-collapse:collapse;font-size:14px}
+  table.score-table th,table.score-table td{padding:6px;text-align:left;border-bottom:1px solid var(--line)}
+  table.score-table th{border-bottom:2px solid var(--line)}
+  @media(max-width:680px){
+    .row{flex-wrap:wrap;align-items:flex-start}
+    .row label{width:100%}
+    .val{width:auto}
+  }
 </style>
 </head>
 <body>
 <div style="background:#1c2333;color:#e6ecfa;font-size:13px;padding:8px 22px;text-align:center">
-  Part of <b style="color:#fff">Microservices Recipes &middot; The Architect's Field Guide</b> (free, open since 2017):
-  <a href="https://vaquarkhan.github.io/microservices-recipes-a-free-gitbook/" style="color:#9ec2ff;font-weight:700">Read online</a>
-  &middot;
-  <a href="https://github.com/vaquarkhan/microservices-recipes-a-free-gitbook" style="color:#9ec2ff;font-weight:700">GitHub repo</a>
+  Part of <b style="color:#fff">Microservices Recipes - The Architect's Field Guide</b> (free, open since 2017):
+  <a href="https://vaquarkhan.github.io/microservices-recipes-a-free-gitbook/" target="_blank" rel="noopener noreferrer" style="color:#9ec2ff;font-weight:700">Read online</a>
+   - 
+  <a href="https://github.com/vaquarkhan/microservices-recipes-a-free-gitbook" target="_blank" rel="noopener noreferrer" style="color:#9ec2ff;font-weight:700">Book GitHub</a>
+   - 
+  <a href="https://github.com/vaquarkhan/fulcrum-rxy" target="_blank" rel="noopener noreferrer" style="color:#9ec2ff;font-weight:700">Fulcrum repo</a>
 </div>
 <header>
-  <p style="margin:0 0 6px"><a href="index.html" style="color:#cfe0ff;text-decoration:none;font-size:13px;font-weight:600">&larr; Home</a></p>
-  <h1>Fulcrum &middot; RVx Boundary Health Calculator</h1>
+  <p style="margin:0 0 6px">
+    <a href="index.html" style="color:#cfe0ff;text-decoration:none;font-size:13px;font-weight:600">&larr; Home</a>
+    &nbsp; - &nbsp;
+    <a href="lab.html" style="color:#cfe0ff;text-decoration:none;font-size:13px;font-weight:600">Immersive Lab</a>
+  </p>
+  <h1>Fulcrum - RVx Boundary Health Calculator</h1>
   <p>The Khan Microservice Granularity Pattern. Move the sliders to see whether a boundary adds value or is a distributed monolith. All math matches the paper exactly.</p>
 </header>
 
@@ -67,11 +90,19 @@
     <div class="tab active" data-tab="rvx">Microservice boundary (RVx)</div>
     <div class="tab" data-tab="agent">AI agent tools (RVx-A)</div>
     <div class="tab" data-tab="saga">Transaction topology (SCS)</div>
+    <div class="tab" data-tab="dmc">Cost of waste (DMC)</div>
     <div class="tab" data-tab="csv">Score real services (CSV)</div>
   </div>
 
   <!-- RVx -->
   <div id="rvx" class="card">
+    <div class="presets">
+      <button type="button" data-preset="optimal">Preset: optimal</button>
+      <button type="button" data-preset="atrisk">Preset: at risk</button>
+      <button type="button" data-preset="monolith">Preset: distributed monolith</button>
+      <button type="button" data-preset="aws">Preset: AWS study example</button>
+      <button type="button" id="fixWeakest" class="btn secondary" style="padding:7px 12px;font-size:12.5px">What-if: fix weakest dimension</button>
+    </div>
     <div class="row"><label>Kinetic Efficiency (E)<div class="desc">useful work / total time. 1 = no overhead.</div></label>
       <input type="range" id="E" min="0" max="1" step="0.01" value="0.6"><span class="val" id="Ev">0.60</span></div>
     <details class="how"><summary>&#9432; How to get E for a real boundary</summary><div class="body">
@@ -102,9 +133,15 @@
     <div class="score">
       <div><div class="bigscore" id="rvxScore">0.00</div><span class="band" id="rvxBand">-</span></div>
       <div class="gauge"><div class="bar"><div class="needle" id="rvxNeedle" style="left:0%"></div></div>
-        <div class="note">Bands: below 0.4 distributed monolith &middot; 0.4 to 0.7 at risk &middot; above 0.7 optimal (illustrative defaults, calibrated per domain).</div></div>
+        <div class="note">Bands: below 0.4 distributed monolith - 0.4 to 0.7 at risk - above 0.7 optimal (illustrative defaults, calibrated per domain).</div></div>
     </div>
     <div class="diag" id="rvxDiag"></div>
+    <div class="components">
+      <div class="chip"><div class="k">E (efficiency)</div><div class="v" id="chipE">-</div></div>
+      <div class="chip"><div class="k">S (distinctness)</div><div class="v" id="chipS">-</div></div>
+      <div class="chip"><div class="k">L (load)</div><div class="v" id="chipL">-</div></div>
+      <div class="chip"><div class="k">RVx_raw</div><div class="v" id="chipRaw">-</div></div>
+    </div>
     <div class="note">Formula: <span class="formula">RVx = raw / (1 + raw), raw = (E^1.2 &times; S) / (L^0.8 + 0.1)</span></div>
   </div>
 
@@ -116,23 +153,23 @@
       Count the tools/functions exposed to the agent in one request, i.e. the length of the MCP tool list
       (or the function schema array) the model must choose among. Model: <a href="https://github.com/vaquarkhan/fulcrum-rxy/blob/main/code/experiments/exp2_agentic.py">exp2_agentic.py</a>.
     </div></details>
-    <div class="row"><label>Tool Distinctness (S_a)<div class="desc">1 = no overlapping/redundant tools.</div></label>
+    <div class="row"><label>Tool Distinctness (S_a)<div class="desc">1 = no overlapping/redundant tools (paper Sec 11.5).</div></label>
       <input type="range" id="Sa" min="0.1" max="1" step="0.01" value="0.9"><span class="val" id="Sav">0.90</span></div>
     <details class="how"><summary>&#9432; How to get S_a</summary><div class="body">
       Estimate <code>S_a = 1 - fraction of redundant/overlapping tools</code> (tools with near-duplicate
       names, schemas, or purposes the model can confuse). Judge from the catalog or cluster tool embeddings.
     </div></details>
-    <div class="row"><label>Token Efficiency (E_a)<div class="desc">1 = little prompt bloat / few round-trips.</div></label>
+    <div class="row"><label>Token-and-Latency Efficiency (E_a)<div class="desc">1 = little prompt bloat / few round-trips (paper Sec 11.5).</div></label>
       <input type="range" id="Ea" min="0.1" max="1" step="0.01" value="0.9"><span class="val" id="Eav">0.90</span></div>
     <details class="how"><summary>&#9432; How to get E_a</summary><div class="body">
-      <code>E_a = useful tool work / total interaction cost</code> in one common unit (tokens plus round-trips).
-      Low when tool descriptions bloat the prompt or the agent needs many turns to act.
+      Paper: <code>E_a = useful tool work / total interaction cost</code> in one stated common unit (tokens and/or latency).
+      Low when tool schemas bloat the prompt or the agent needs many turns. Quote the cost unit with the score.
     </div></details>
     <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
     <div class="score">
       <div><div class="bigscore" id="aScore">0.00</div><span class="band" id="aBand">-</span></div>
       <div class="gauge"><div class="bar"><div class="needle" id="aNeedle" style="left:0%"></div></div>
-        <div class="note">Higher is a healthier tool boundary. Agent Context Load L_a rises with tool count.</div></div>
+        <div class="note">Higher is a healthier tool boundary (proposed RVx-A). Agent Context Load L_a rises with tool count.</div></div>
     </div>
     <div class="components">
       <div class="chip"><div class="k">Agent Context Load (L_a)</div><div class="v" id="La">-</div></div>
@@ -170,6 +207,31 @@
     <div class="note">Formula: <span class="formula">SCS = C &times; R &times; i/(i+5)</span>. Higher favors a central orchestrator; lower favors event choreography.</div>
   </div>
 
+  <!-- DMC -->
+  <div id="dmc" class="card hidden">
+    <p style="margin-top:0">Distributed-Monolith Cost (DMC) prices wasted transaction time from low Kinetic Efficiency:
+      <span class="formula">W = N &times; t &times; (1 - E)</span> (seconds of overhead per period).</p>
+    <div class="row"><label>Requests in period (N)<div class="desc">e.g. monthly request volume.</div></label>
+      <input class="num" type="number" id="dmcN" min="1" step="1000" value="1000000"></div>
+    <div class="row"><label>Avg transaction time t (ms)<div class="desc">end-to-end wall time per request.</div></label>
+      <input class="num" type="number" id="dmcT" min="1" step="1" value="250"></div>
+    <div class="row"><label>Kinetic Efficiency (E)<div class="desc">same E as RVx; sync from RVx tab below.</div></label>
+      <input type="range" id="dmcE" min="0" max="1" step="0.01" value="0.6"><span class="val" id="dmcEv">0.60</span></div>
+    <div class="row"><label>Cost per wasted second ($)<div class="desc">optional dollar overlay (illustrative).</div></label>
+      <input class="num" type="number" id="dmcRate" min="0" step="0.0001" value="0.0001"></div>
+    <div class="csv-actions">
+      <button type="button" id="dmcSync" class="btn secondary">Use E from RVx tab</button>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <div class="components">
+      <div class="chip"><div class="k">Wasted time W</div><div class="v" id="dmcW">-</div></div>
+      <div class="chip"><div class="k">Overhead share</div><div class="v" id="dmcShare">-</div></div>
+      <div class="chip"><div class="k">Illustrative $</div><div class="v" id="dmcDollars">-</div></div>
+    </div>
+    <div class="diag" id="dmcDiag"></div>
+    <div class="note">Dollar rate is illustrative only. Prefer W (wasted seconds) as the measurable core from the same traces as E.</div>
+  </div>
+
   <!-- CSV -->
   <div id="csv" class="card hidden">
     <p style="margin-top:0">Paste one boundary per line as <b>name,E,S,L</b> (values 0 to 1), or load a CSV file. A header row is optional. This scores your real boundaries and ranks them.</p>
@@ -179,23 +241,28 @@ checkout-pricing,0.28,0.35,0.55
 notification,0.90,0.95,0.15
 catalog-read,0.82,0.88,0.25
 legacy-orders,0.32,0.45,0.70</textarea>
-    <div class="row" style="margin-top:10px">
+    <div class="csv-actions">
       <input type="file" id="csvFile" accept=".csv,.txt">
-      <button id="csvRun" style="padding:9px 18px;border:none;background:var(--blue);color:#fff;border-radius:8px;font-weight:600;cursor:pointer">Score boundaries</button>
+      <button type="button" id="csvRun" class="btn">Score boundaries</button>
+      <button type="button" id="csvExport" class="btn secondary" disabled>Export scored CSV</button>
     </div>
-    <div id="csvOut" style="margin-top:10px"></div>
-    <div class="note">RVx uses your measured E, S, L. Export the scores by copying the table. Thresholds are illustrative defaults.</div>
+    <div id="csvOut" class="table-wrap"></div>
+    <div class="note">RVx uses your measured E, S, L. Boundary names are rendered safely (no HTML). Thresholds are illustrative defaults. Do not paste account IDs or credentials.</div>
   </div>
 </div>
 
 <footer>
-  <a href="index.html">&larr; Home</a> &nbsp;&middot;&nbsp;
-  <a href="https://github.com/vaquarkhan/fulcrum-rxy">GitHub repo</a> &nbsp;&middot;&nbsp;
-  <a href="https://github.com/vaquarkhan/microservices-recipes-a-free-gitbook">Microservices Recipes (free book, since 2017)</a> &nbsp;&middot;&nbsp;
+  <a href="index.html">&larr; Home</a> &nbsp; - &nbsp;
+  <a href="lab.html">Immersive Lab</a> &nbsp; - &nbsp;
+  <a href="https://github.com/vaquarkhan/fulcrum-rxy" target="_blank" rel="noopener noreferrer">GitHub repo</a> &nbsp; - &nbsp;
+  <a href="https://github.com/vaquarkhan/microservices-recipes-a-free-gitbook" target="_blank" rel="noopener noreferrer">Microservices Recipes (free book)</a> &nbsp; - &nbsp;
+  <a href="https://vaquarkhan.github.io/microservices-recipes-a-free-gitbook/" target="_blank" rel="noopener noreferrer">Read book online</a> &nbsp; - &nbsp;
   <a href="index.html#paper">Paper</a><br>
-  Copyright &copy; 2026 Viquar Khan. Fulcrum and The Khan Microservice Granularity Pattern.
-  Code under Apache-2.0, documentation under CC BY 4.0. Scores are diagnostic aids; thresholds are
-  illustrative defaults pending per-domain calibration.
+  <b>Copyright &copy; 2026 Viquar Khan.</b> All rights reserved.
+  ORCID <a href="https://orcid.org/0009-0008-3592-4162" target="_blank" rel="noopener noreferrer">0009-0008-3592-4162</a>.
+  Fulcrum and The Khan Microservice Granularity Pattern.
+  Code under Apache-2.0, documentation under CC BY 4.0.
+  Thresholds and dollar overlays are illustrative defaults from the paper.
 </footer>
 
 <script>
@@ -203,27 +270,61 @@ function clamp(x){return Math.max(0,Math.min(1,x));}
 function rvx(E,S,L){var raw=(Math.pow(E,1.2)*S)/(Math.pow(L,0.8)+0.1);return raw/(1+raw);}
 function band(s){if(s>0.7)return['Optimal boundary','#2f6b2f'];if(s>=0.4)return['At risk','#b8860b'];return['Distributed monolith','#96393a'];}
 function weakest(E,S,L){var m={'efficiency (E)':E,'distinctness (S)':S,'low load':1-L};var k=Object.keys(m).reduce((a,b)=>m[a]<m[b]?a:b);return k;}
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function setDiag(el, htmlSafe){ el.innerHTML = htmlSafe; }
 
 function tab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
-  ['rvx','agent','saga','csv'].forEach(id=>document.getElementById(id).classList.toggle('hidden',id!==name));
+  ['rvx','agent','saga','dmc','csv'].forEach(id=>document.getElementById(id).classList.toggle('hidden',id!==name));
 }
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>tab(t.dataset.tab)));
+document.querySelectorAll('a[href^="http"]').forEach(function(a){
+  a.setAttribute('target','_blank');
+  a.setAttribute('rel','noopener noreferrer');
+});
 
 function updRvx(){
   var E=+E_.value,S=+S_.value,L=+L_.value;
   Ev.textContent=E.toFixed(2);Sv.textContent=S.toFixed(2);Lv.textContent=L.toFixed(2);
-  var s=rvx(E,S,L);var b=band(s);
+  var raw=(Math.pow(E,1.2)*S)/(Math.pow(L,0.8)+0.1);
+  var s=raw/(1+raw);var b=band(s);
   rvxScore.textContent=s.toFixed(2);rvxBand.textContent=b[0];rvxBand.style.background=b[1];
   rvxNeedle.style.left=(s*100)+'%';
+  document.getElementById('chipE').textContent=E.toFixed(2);
+  document.getElementById('chipS').textContent=S.toFixed(2);
+  document.getElementById('chipL').textContent=L.toFixed(2);
+  document.getElementById('chipRaw').textContent=raw.toFixed(2);
   var w=weakest(E,S,L);var fix='';
   if(w==='efficiency (E)')fix='mostly network/overhead. Merge the two services or make the interaction asynchronous.';
   else if(w==='distinctness (S)')fix='it changes together with its neighbor. Re-cut along the true seam or merge.';
   else fix='too complex for the owning team. Simplify the surface or reassign ownership.';
-  rvxDiag.innerHTML='Weakest dimension: <b>'+w+'</b>. Diagnosis: '+fix;
+  setDiag(rvxDiag, 'Weakest dimension: <b>'+escapeHtml(w)+'</b>. Diagnosis: '+escapeHtml(fix));
 }
 var E_=document.getElementById('E'),S_=document.getElementById('S'),L_=document.getElementById('L');
 [E_,S_,L_].forEach(el=>el.addEventListener('input',updRvx));
+
+var PRESETS={
+  optimal:{E:0.85,S:0.88,L:0.25},
+  atrisk:{E:0.55,S:0.50,L:0.55},
+  monolith:{E:0.28,S:0.30,L:0.70},
+  aws:{E:0.40,S:0.17,L:0.20}
+};
+document.querySelectorAll('[data-preset]').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var p=PRESETS[btn.dataset.preset]; if(!p)return;
+    E_.value=p.E; S_.value=p.S; L_.value=p.L; updRvx();
+  });
+});
+document.getElementById('fixWeakest').addEventListener('click',function(){
+  var E=+E_.value,S=+S_.value,L=+L_.value;
+  var w=weakest(E,S,L);
+  if(w==='efficiency (E)') E_.value=Math.min(1, E+0.25);
+  else if(w==='distinctness (S)') S_.value=Math.min(1, S+0.25);
+  else L_.value=Math.max(0, L-0.25);
+  updRvx();
+});
 
 function acc(n,Sa){var neff=n*(1+1.5*(1-Sa));return 1/(1+Math.pow(neff/45,2.2));}
 function updAgent(){
@@ -238,7 +339,7 @@ function updAgent(){
   if(n>60)d='Too many tools: the agent is past the collapse point. Surface a smaller relevant subset (Adaptive Tool Surfacing).';
   else if(Sa<0.6)d='Redundant, overlapping tools. Merge duplicates to sharpen selection.';
   else d='Healthy tool boundary. The agent can reliably choose.';
-  aDiag.innerHTML='<b>'+d+'</b>';
+  setDiag(aDiag, '<b>'+escapeHtml(d)+'</b>');
 }
 var n_=document.getElementById('n'),Sa_=document.getElementById('Sa'),Ea_=document.getElementById('Ea');
 [n_,Sa_,Ea_].forEach(el=>el.addEventListener('input',updAgent));
@@ -251,13 +352,44 @@ function updSaga(){
   var opt=scs>=0.25;
   scsBand.textContent=opt?'Use orchestration':'Use choreography';
   scsBand.style.background=opt?'#33518a':'#2f6b2f';
-  scsAdvice.innerHTML=opt
+  setDiag(scsAdvice, opt
     ?'High complexity/risk/interaction: use a central <b>orchestrator</b> (state machine, audit trail, compensation).'
-    :'Low complexity/risk: let services react to events (<b>choreography</b>, decentralized).';
+    :'Low complexity/risk: let services react to events (<b>choreography</b>, decentralized).');
 }
 var C_=document.getElementById('C'),R_=document.getElementById('R'),i_=document.getElementById('i');
 [C_,R_,i_].forEach(el=>el.addEventListener('input',updSaga));
 
+function fmtSeconds(s){
+  if(s>=86400) return (s/86400).toFixed(1)+' days';
+  if(s>=3600) return (s/3600).toFixed(1)+' hours';
+  if(s>=60) return (s/60).toFixed(1)+' min';
+  return s.toFixed(0)+' s';
+}
+function updDmc(){
+  var N=+document.getElementById('dmcN').value||0;
+  var tMs=+document.getElementById('dmcT').value||0;
+  var E=+document.getElementById('dmcE').value;
+  var rate=+document.getElementById('dmcRate').value||0;
+  document.getElementById('dmcEv').textContent=E.toFixed(2);
+  var t=tMs/1000.0;
+  var W=N*t*(1-E);
+  var dollars=W*rate;
+  document.getElementById('dmcW').textContent=fmtSeconds(W);
+  document.getElementById('dmcShare').textContent=((1-E)*100).toFixed(0)+'%';
+  document.getElementById('dmcDollars').textContent='$'+(dollars>=1000?dollars.toFixed(0):dollars.toFixed(2));
+  var msg=E<0.4
+    ?'High overhead: most wall time is network/serialization. Prefer merge or async to cut W.'
+    :(E<0.7?'Moderate overhead: improve local work share or batch cross-boundary calls.':'Low overhead: efficiency is healthy; check S and L before celebrating.');
+  setDiag(document.getElementById('dmcDiag'), '<b>'+escapeHtml(msg)+'</b> W = '+escapeHtml(fmtSeconds(W))+' of wasted compute-wait time in the period.');
+}
+['dmcN','dmcT','dmcE','dmcRate'].forEach(function(id){
+  document.getElementById(id).addEventListener('input',updDmc);
+});
+document.getElementById('dmcSync').addEventListener('click',function(){
+  document.getElementById('dmcE').value=E_.value; updDmc();
+});
+
+var lastCsvRows=[];
 function scoreCsv(){
   var txt=document.getElementById('csvText').value.trim();
   var rows=[];
@@ -265,27 +397,80 @@ function scoreCsv(){
     var parts=line.split(',').map(function(x){return x.trim();});
     if(parts.length<4) return;
     var name=parts[0]; var E=parseFloat(parts[1]),S=parseFloat(parts[2]),L=parseFloat(parts[3]);
-    if(isNaN(E)||isNaN(S)||isNaN(L)) return; // skips header
+    if(isNaN(E)||isNaN(S)||isNaN(L)) return;
     rows.push({name:name,E:clamp(E),S:clamp(S),L:clamp(L),rvx:rvx(clamp(E),clamp(S),clamp(L))});
   });
   rows.sort(function(a,b){return b.rvx-a.rvx;});
-  if(!rows.length){document.getElementById('csvOut').innerHTML='<div class="note">No valid rows found. Use name,E,S,L.</div>';return;}
-  var h='<table style="width:100%;border-collapse:collapse;font-size:14px"><tr style="text-align:left;border-bottom:2px solid var(--line)"><th style="padding:6px">Boundary</th><th>E</th><th>S</th><th>L</th><th>RVx</th><th>Band</th><th>Weakest</th></tr>';
+  lastCsvRows=rows;
+  document.getElementById('csvExport').disabled=!rows.length;
+  var out=document.getElementById('csvOut');
+  out.textContent='';
+  if(!rows.length){
+    var note=document.createElement('div');
+    note.className='note';
+    note.textContent='No valid rows found. Use name,E,S,L.';
+    out.appendChild(note);
+    return;
+  }
+  var table=document.createElement('table');
+  table.className='score-table';
+  var thead=document.createElement('tr');
+  ['Boundary','E','S','L','RVx','Band','Weakest'].forEach(function(h){
+    var th=document.createElement('th'); th.textContent=h; thead.appendChild(th);
+  });
+  table.appendChild(thead);
   rows.forEach(function(r){
     var b=band(r.rvx); var w=weakest(r.E,r.S,r.L);
-    h+='<tr style="border-bottom:1px solid var(--line)"><td style="padding:6px">'+r.name+'</td><td>'+r.E.toFixed(2)+'</td><td>'+r.S.toFixed(2)+'</td><td>'+r.L.toFixed(2)+'</td><td><b>'+r.rvx.toFixed(3)+'</b></td><td><span class="band" style="background:'+b[1]+';font-size:11px;padding:2px 8px">'+b[0]+'</span></td><td>'+w+'</td></tr>';
+    var tr=document.createElement('tr');
+    function td(text, bold){
+      var cell=document.createElement('td');
+      if(bold){ var strong=document.createElement('b'); strong.textContent=text; cell.appendChild(strong); }
+      else cell.textContent=text;
+      return cell;
+    }
+    tr.appendChild(td(r.name));
+    tr.appendChild(td(r.E.toFixed(2)));
+    tr.appendChild(td(r.S.toFixed(2)));
+    tr.appendChild(td(r.L.toFixed(2)));
+    tr.appendChild(td(r.rvx.toFixed(3), true));
+    var bandCell=document.createElement('td');
+    var span=document.createElement('span');
+    span.className='band';
+    span.style.background=b[1];
+    span.style.fontSize='11px';
+    span.style.padding='2px 8px';
+    span.textContent=b[0];
+    bandCell.appendChild(span);
+    tr.appendChild(bandCell);
+    tr.appendChild(td(w));
+    table.appendChild(tr);
   });
-  h+='</table>';
-  document.getElementById('csvOut').innerHTML=h;
+  out.appendChild(table);
+}
+function exportCsv(){
+  if(!lastCsvRows.length) return;
+  var lines=['name,E,S,L,RVx,band,weakest'];
+  lastCsvRows.forEach(function(r){
+    var b=band(r.rvx); var w=weakest(r.E,r.S,r.L);
+    var safeName='"'+String(r.name).replace(/"/g,'""')+'"';
+    lines.push([safeName,r.E.toFixed(4),r.S.toFixed(4),r.L.toFixed(4),r.rvx.toFixed(4),'"'+b[0]+'"','"'+w+'"'].join(','));
+  });
+  var blob=new Blob([lines.join('\n')+'\n'],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='fulcrum-rvx-scores.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 document.getElementById('csvRun').addEventListener('click',scoreCsv);
+document.getElementById('csvExport').addEventListener('click',exportCsv);
 document.getElementById('csvFile').addEventListener('change',function(e){
   var f=e.target.files[0]; if(!f)return; var rd=new FileReader();
   rd.onload=function(){document.getElementById('csvText').value=rd.result;scoreCsv();};
   rd.readAsText(f);
 });
 
-updRvx();updAgent();updSaga();scoreCsv();
+updRvx();updAgent();updSaga();updDmc();scoreCsv();
 </script>
 </body>
 </html>

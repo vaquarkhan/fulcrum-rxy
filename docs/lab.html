@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fulcrum Immersive Lab - learn by watching</title>
+<meta name="description" content="Watch microservice boundaries fail or succeed. Plain-language Fulcrum / RVx lab for people who know the basics of microservices.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#e8eef8; --muted:#8fa0b8; --line:rgba(140,170,210,.22);
+    --blue:#5b8fd9; --teal:#3ecfb0; --amber:#e2b04a; --red:#e07070;
+    --panel:rgba(12,22,40,.82); --glow:rgba(62,207,176,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html,body{margin:0;padding:0;height:auto!important;min-height:100%;overflow-x:hidden;overflow-y:scroll!important;font-family:Outfit,system-ui,sans-serif;color:var(--ink);background:#050a14}
+  a{color:#9ec8ff;text-decoration:none}
+  a:hover{text-decoration:underline}
+  .backdrop{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(1200px 700px at 20% 10%, rgba(53,90,150,.35), transparent 55%),
+      radial-gradient(900px 600px at 80% 80%, rgba(30,120,110,.22), transparent 50%),
+      linear-gradient(160deg,#060b16 0%,#0a1426 45%,#071018 100%);
+  }
+  .grid-floor{
+    position:absolute; left:-20%; right:-20%; bottom:-40%; height:70%;
+    background:
+      linear-gradient(rgba(90,140,200,.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(90,140,200,.12) 1px, transparent 1px);
+    background-size:56px 56px;
+    transform:perspective(700px) rotateX(68deg);
+    transform-origin:center top;
+    mask-image:linear-gradient(to bottom, rgba(0,0,0,.7), transparent 85%);
+    animation:floorDrift 28s linear infinite;
+  }
+  @keyframes floorDrift{to{background-position:56px 56px}}
+  .stars{position:absolute; inset:0; opacity:.5; pointer-events:none}
+  canvas#fx{position:absolute; inset:0; width:100%; height:100%; pointer-events:none}
+  .page{position:relative;z-index:5;width:100%;display:flex;flex-direction:column;gap:12px;padding:12px 14px 48px;max-width:1200px;margin:0 auto;min-height:calc(100vh + 420px)}
+  .top{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+  .brand{font-weight:800; font-size:17px; letter-spacing:.3px}
+  .brand span{color:var(--teal)}
+  .nav a{
+    margin-left:8px; font-size:13px; font-weight:600; color:var(--muted);
+    padding:7px 11px; border-radius:999px; border:1px solid transparent;
+  }
+  .nav a:hover{color:var(--ink); border-color:var(--line); text-decoration:none}
+  .nav a.cta{background:rgba(62,207,176,.15); border-color:rgba(62,207,176,.4); color:var(--teal)}
+
+  .primer{
+    display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;
+    background:rgba(62,207,176,.08); border:1px solid rgba(62,207,176,.28);
+    border-radius:14px; padding:10px 14px;
+  }
+  .primer .tag{
+    flex:0 0 auto; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+    color:#041018; background:var(--teal); border-radius:999px; padding:5px 10px;
+  }
+  .primer p{margin:0; flex:1 1 280px; font-size:13px; line-height:1.45; color:#d5e4f7}
+  .primer .chips{display:flex; gap:6px; flex-wrap:wrap}
+  .primer .chip{
+    font-size:11px; font-weight:700; color:var(--muted); border:1px solid var(--line);
+    border-radius:999px; padding:5px 9px; background:rgba(0,0,0,.2);
+  }
+  .primer .chip b{color:var(--ink)}
+
+  .tabs{
+    display:flex; gap:6px; overflow-x:auto; padding:2px 0 2px;
+    scrollbar-width:thin; -webkit-overflow-scrolling:touch;
+  }
+  .tab{
+    flex:0 0 auto; border:1px solid var(--line); background:rgba(255,255,255,.04);
+    color:var(--muted); border-radius:999px; padding:7px 13px; font-size:12px;
+    font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap;
+  }
+  .tab:hover{color:var(--ink); border-color:rgba(158,200,255,.4)}
+  .tab.on{color:#041018; background:linear-gradient(135deg,#3ecfb0,#5b8fd9); border-color:transparent}
+
+  .detail{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:12px 14px; backdrop-filter:blur(14px);
+    box-shadow:0 10px 30px rgba(0,0,0,.25); max-height:none; overflow:visible;
+  }
+  .detail-top{display:flex; gap:14px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap}
+  .detail h2{margin:0 0 4px; font-size:18px; font-weight:800}
+  .detail .kick{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--teal); font-weight:700; margin-bottom:2px}
+  .detail-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .btn{
+    border:1px solid var(--line); background:rgba(255,255,255,.05); color:var(--ink);
+    padding:8px 12px; border-radius:999px; font-weight:700; font-size:12px; cursor:pointer;
+    font-family:inherit;
+  }
+  .btn:hover{border-color:rgba(158,200,255,.45)}
+  .btn.on{background:rgba(62,207,176,.18); border-color:rgba(62,207,176,.5); color:var(--teal)}
+  .btn.danger.on{background:rgba(224,112,112,.18); border-color:rgba(224,112,112,.5); color:var(--red)}
+
+  .teach{
+    display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:10px;
+  }
+  .teach article{
+    background:rgba(255,255,255,.04); border:1px solid var(--line); border-radius:12px; padding:10px 11px;
+  }
+  .teach h3{
+    margin:0 0 5px; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--teal); font-weight:800;
+  }
+  .teach p{margin:0; font-size:13px; line-height:1.45; color:#c5d4ea}
+  .teach .watch-list{margin:0; padding-left:16px; color:#c5d4ea; font-size:13px; line-height:1.45}
+  .teach .watch-list li{margin:2px 0}
+
+  .metrics{
+    display:none; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:10px;
+  }
+  .metrics.show{display:grid}
+  .metric-card{
+    background:rgba(255,255,255,.04); border:1px solid var(--line); border-radius:12px; padding:8px 10px;
+  }
+  .metric-card span{display:block; font-size:11px; color:var(--muted); margin-bottom:3px}
+  .metric-card b{font-family:"JetBrains Mono",monospace; font-size:18px}
+  .metric-card.good b{color:var(--teal)} .metric-card.warn b{color:var(--amber)} .metric-card.bad b{color:var(--red)}
+  .bar{height:6px; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; margin-top:6px}
+  .bar > i{display:block; height:100%; width:0; transition:width .35s ease; border-radius:99px}
+  .bar.e > i{background:#5b8fd9} .bar.s > i{background:#3ecfb0} .bar.l > i{background:#e2b04a}
+  .sliders{display:none; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:10px}
+  .sliders.show{display:grid}
+  .sliders label{display:grid; grid-template-columns:24px 1fr 42px; gap:8px; align-items:center; font-size:12px; color:var(--muted)}
+  .sliders input[type=range]{width:100%; accent-color:var(--teal)}
+  .sliders span{font-family:"JetBrains Mono",monospace; color:var(--ink); text-align:right}
+  .formula{
+    display:none; margin-top:10px; font-family:"JetBrains Mono",monospace; font-size:12px;
+    padding:8px 10px; border-radius:10px; background:rgba(0,0,0,.25); border:1px solid var(--line); color:#cfe0ff;
+  }
+  .formula.show{display:block}
+  .band{display:inline-block; padding:4px 9px; border-radius:999px; font-size:11px; font-weight:700; margin-left:6px}
+
+  .world{position:relative;border:1px solid var(--line);border-radius:18px;overflow:hidden;display:block;width:100%;height:580px!important;min-height:580px!important;flex:none;background:linear-gradient(180deg,rgba(10,20,38,.4),rgba(6,12,24,.6));box-shadow:0 20px 60px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06);scroll-margin-top:20px}
+  .world-inner{position:absolute; inset:0; perspective:1100px; transform-style:preserve-3d}
+  .scene{
+    position:absolute; left:50%; top:46%;
+    width:min(920px, 94vw); height:min(360px, 52vh);
+    transform:translate(-50%,-50%) rotateX(16deg) rotateY(var(--yaw, -12deg));
+    transform-style:preserve-3d; transition:transform .8s cubic-bezier(.2,.8,.2,1);
+  }
+  .node{
+    position:absolute; width:100px; height:100px; margin:-50px 0 0 -50px;
+    transform-style:preserve-3d; cursor:pointer; transition:transform .45s ease;
+  }
+  .node .face{
+    position:absolute; inset:0; border-radius:18px;
+    background:linear-gradient(145deg, rgba(40,70,120,.95), rgba(16,28,52,.95));
+    border:1px solid rgba(140,180,230,.35);
+    box-shadow:0 16px 36px rgba(0,0,0,.45);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .node.healthy .face{border-color:rgba(62,207,176,.55); box-shadow:0 16px 36px rgba(0,0,0,.4), 0 0 26px var(--glow)}
+  .node.chatty .face{border-color:rgba(224,112,112,.55); box-shadow:0 16px 36px rgba(0,0,0,.4), 0 0 26px rgba(224,112,112,.28)}
+  .node .label{font-weight:800; font-size:13px}
+  .node .sub{font-size:10px; color:var(--muted); margin-top:3px}
+  .node:hover{transform:translateZ(36px) scale(1.05)}
+  .beam{
+    position:absolute; height:2px; transform-origin:left center;
+    background:linear-gradient(90deg, transparent, rgba(158,200,255,.85), transparent);
+    box-shadow:0 0 10px rgba(158,200,255,.5); opacity:.55; pointer-events:none;
+  }
+  .beam.hot{opacity:1; height:3px; background:linear-gradient(90deg, transparent, #e07070, #e2b04a, transparent)}
+  .packet{
+    position:absolute; width:10px; height:10px; margin:-5px; border-radius:50%;
+    background:#fff; box-shadow:0 0 12px #3ecfb0, 0 0 24px rgba(62,207,176,.6);
+    pointer-events:none; z-index:3;
+  }
+  .packet.bad{box-shadow:0 0 12px #e07070, 0 0 24px rgba(224,112,112,.55)}
+  .caption{
+    position:absolute; left:14px; right:14px; bottom:12px; z-index:4;
+    display:grid; gap:6px;
+  }
+  .caption .now{
+    font-size:14px; font-weight:700; color:var(--ink);
+    background:rgba(8,14,28,.78); border:1px solid rgba(62,207,176,.35);
+    border-radius:12px; padding:10px 12px; line-height:1.4;
+  }
+  .caption .now em{font-style:normal; color:var(--teal)}
+  .caption .legend{
+    display:flex; gap:8px; flex-wrap:wrap; font-size:11px; color:var(--muted);
+  }
+  .caption .legend span{
+    border:1px solid var(--line); border-radius:999px; padding:4px 8px; background:rgba(8,14,28,.55);
+  }
+  .loop-ring{
+    position:absolute; left:50%; top:50%; width:260px; height:260px; margin:-130px 0 0 -130px;
+    border-radius:50%; border:1px dashed rgba(140,170,210,.25);
+    transform:translateZ(-80px); display:none;
+  }
+  .world.mode-loop .loop-ring{display:block}
+  .world.mode-loop #graph{opacity:.25; filter:blur(1px)}
+  .loop-node{
+    position:absolute; width:90px; height:90px; margin:-45px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    font-size:11px; font-weight:800; letter-spacing:.04em;
+    background:rgba(12,22,40,.9); border:1px solid var(--line);
+    transition:box-shadow .35s, border-color .35s, transform .35s;
+  }
+  .loop-node.active{border-color:var(--teal); box-shadow:0 0 28px rgba(62,207,176,.45); transform:scale(1.08)}
+  .jump-sim{
+    position:sticky; top:10px; z-index:20; align-self:flex-start;
+    display:inline-flex; gap:8px; align-items:center;
+    background:rgba(62,207,176,.16); border:1px solid rgba(62,207,176,.45);
+    color:var(--teal); font-weight:800; font-size:13px; padding:8px 14px;
+    border-radius:999px; text-decoration:none; backdrop-filter:blur(8px);
+  }
+  .jump-sim:hover{background:rgba(62,207,176,.28); text-decoration:none}
+  .footer{
+    display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    font-size:12px; color:var(--muted);
+  }
+  .orb{
+    position:absolute; width:180px; height:180px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, rgba(91,143,217,.3), transparent 60%);
+    filter:blur(2px); pointer-events:none; animation:float 9s ease-in-out infinite;
+  }
+  .orb.a{left:8%; top:18%} .orb.b{right:10%; bottom:20%; animation-delay:-3s;
+    background:radial-gradient(circle at 40% 40%, rgba(62,207,176,.25), transparent 62%)}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+  @media(max-width:900px){
+    .teach{grid-template-columns:1fr}
+    .metrics{grid-template-columns:1fr 1fr}
+    .sliders{grid-template-columns:1fr}
+    .world{height:500px!important;min-height:500px!important}
+    .scene{height:280px; top:50%}
+    .detail{max-height:none; overflow:visible}
+  }
+</style>
+</head>
+<body>
+<div class="backdrop" aria-hidden="true">
+  <div class="stars" id="stars"></div>
+  <div class="grid-floor"></div>
+  <div class="orb a"></div>
+  <div class="orb b"></div>
+  <canvas id="fx"></canvas>
+</div>
+
+<div class="page">
+    <div class="top">
+      <div class="brand">Fulcrum <span>Immersive Lab</span></div>
+      <div class="nav">
+        <a href="index.html">Home</a>
+        <a href="calculator.html" class="cta">Calculator</a>
+        <a href="https://github.com/vaquarkhan/fulcrum-rxy" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </div>
+
+    <div class="primer">
+      <div class="tag">Start here</div>
+      <p>
+        If you know the basics of microservices, this lab answers one question:
+        <b>did this service cut help, or did we invent a distributed monolith?</b>
+        Pick a tab. Read the three teaching cards. Then <a href="#world">scroll down</a> to the simulation and follow the live caption.
+      </p>
+      <div class="chips">
+        <span class="chip"><b>E</b> = useful work / wait</span>
+        <span class="chip"><b>S</b> = evolves alone</span>
+        <span class="chip"><b>L</b> = team can own it</span>
+        <span class="chip"><b>RVx</b> = boundary health</span>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs" role="tablist" aria-label="Lab topics"></div>
+    <a class="jump-sim" href="#world">↓ Jump to simulation</a>
+
+    <section class="detail" id="detail" aria-live="polite">
+      <div class="detail-top">
+        <div>
+          <div class="kick" id="detailKick">Topic</div>
+          <h2 id="detailTitle">Title</h2>
+        </div>
+        <div class="detail-actions" id="detailActions"></div>
+      </div>
+
+      <div class="teach">
+        <article>
+          <h3>In plain words</h3>
+          <p id="plainText">...</p>
+        </article>
+        <article>
+          <h3>What to watch</h3>
+          <ul class="watch-list" id="watchList"></ul>
+        </article>
+        <article>
+          <h3>Why it matters</h3>
+          <p id="whyText">...</p>
+        </article>
+      </div>
+
+      <div class="metrics" id="metrics">
+        <div class="metric-card" id="mE"><span>E · Kinetic Efficiency</span><b>0.85</b><div class="bar e"><i id="barE"></i></div></div>
+        <div class="metric-card" id="mS"><span>S · Semantic Distinctness</span><b>0.80</b><div class="bar s"><i id="barS"></i></div></div>
+        <div class="metric-card" id="mL"><span>L · Cognitive Load</span><b>0.30</b><div class="bar l"><i id="barL"></i></div></div>
+        <div class="metric-card" id="mR"><span>RVx health <span class="band" id="band">-</span></span><b>0.00</b></div>
+      </div>
+      <div class="sliders" id="sliders">
+        <label>E <input type="range" id="e" min="0" max="1" step="0.01" value="0.85"><span id="ev">0.85</span></label>
+        <label>S <input type="range" id="s" min="0" max="1" step="0.01" value="0.80"><span id="sv">0.80</span></label>
+        <label>L <input type="range" id="l" min="0" max="1" step="0.01" value="0.30"><span id="lv">0.30</span></label>
+      </div>
+      <div class="formula" id="formula"></div>
+    </section>
+
+    <div class="world" id="world">
+      <div class="world-inner">
+        <div class="scene" id="scene">
+          <div class="loop-ring" id="loopRing"></div>
+          <div id="graph"></div>
+        </div>
+        <div class="caption">
+          <div class="now" id="liveCaption"><em>Live:</em> Pick a tab, then press Pulse traffic.</div>
+          <div class="legend" id="legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div><b>Copyright &copy; 2026 Viquar Khan.</b> All rights reserved.</div>
+      <div>
+        <a href="https://vaquarkhan.github.io/microservices-recipes-a-free-gitbook/" target="_blank" rel="noopener noreferrer">Microservices Recipes</a>
+        &nbsp;|&nbsp;
+        <a href="https://orcid.org/0009-0008-3592-4162" target="_blank" rel="noopener noreferrer">ORCID</a>
+      </div>
+    </div>
+</div>
+
+<script>
+(function(){
+  function clamp(x){return Math.max(0,Math.min(1,+x));}
+  function rvx(E,S,L){var raw=(Math.pow(E,1.2)*S)/(Math.pow(L,0.8)+0.1);return raw/(1+raw);}
+  function band(s){if(s>0.7)return['Healthy cut','#2f6b2f','good'];if(s>=0.4)return['Needs care','#b8860b','warn'];return['Distributed monolith','#96393a','bad'];}
+  function weakest(E,S,L){
+    var m={E:E,S:S,'1-L':1-L}; return Object.keys(m).reduce(function(a,b){return m[a]<m[b]?a:b;});
+  }
+  function weakestPlain(w){
+    if(w==='E') return 'too many network waits (E)';
+    if(w==='S') return 'services change together (S)';
+    return 'team overloaded (L)';
+  }
+  function setCaption(html){ document.getElementById('liveCaption').innerHTML=html; }
+
+  var stars=document.getElementById('stars'), shtml='';
+  for(var i=0;i<70;i++){
+    var x=Math.random()*100,y=Math.random()*100,r=Math.random()*1.8+0.4,o=Math.random()*0.7+0.2;
+    shtml+='<span style="position:absolute;left:'+x+'%;top:'+y+'%;width:'+r+'px;height:'+r+'px;border-radius:50%;background:#fff;opacity:'+o+'"></span>';
+  }
+  stars.innerHTML=shtml;
+
+  var canvas=document.getElementById('fx'), ctx=canvas.getContext('2d');
+  var W=0,H=0, particles=[];
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+  window.addEventListener('resize',resize); resize();
+  function spawnBurst(x,y,bad){
+    for(var i=0;i<16;i++){
+      var a=Math.random()*Math.PI*2, sp=Math.random()*2.2+0.4;
+      particles.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,bad:bad});
+    }
+  }
+  function tickFx(){
+    ctx.clearRect(0,0,W,H);
+    for(var i=particles.length-1;i>=0;i--){
+      var p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.life-=0.02;
+      if(p.life<=0){particles.splice(i,1); continue;}
+      ctx.beginPath(); ctx.arc(p.x,p.y,2.2,0,Math.PI*2);
+      ctx.fillStyle=p.bad?('rgba(224,112,112,'+p.life+')'):('rgba(62,207,176,'+p.life+')');
+      ctx.fill();
+    }
+    requestAnimationFrame(tickFx);
+  }
+  tickFx();
+
+  var state={tab:'worlds', mode:'healthy', E:0.85, S:0.80, L:0.30, yaw:-12, loopOn:false};
+  var graph=document.getElementById('graph');
+  var scene=document.getElementById('scene');
+  var world=document.getElementById('world');
+
+  var layouts={
+    healthy:[
+      {id:'api',label:'API',sub:'front door',x:18,y:45},
+      {id:'orders',label:'Orders',sub:'owns the work',x:50,y:45},
+      {id:'db',label:'Store',sub:'data',x:82,y:45}
+    ],
+    chatty:[
+      {id:'api',label:'API',sub:'front door',x:12,y:45},
+      {id:'a',label:'Svc A',sub:'extra hop',x:32,y:28},
+      {id:'b',label:'Svc B',sub:'extra hop',x:32,y:62},
+      {id:'c',label:'Svc C',sub:'extra hop',x:55,y:28},
+      {id:'d',label:'Svc D',sub:'extra hop',x:55,y:62},
+      {id:'leaf',label:'Shared',sub:'bottleneck',x:82,y:45}
+    ]
+  };
+  var edges={
+    healthy:[['api','orders'],['orders','db']],
+    chatty:[['api','a'],['api','b'],['a','c'],['b','d'],['c','leaf'],['d','leaf']]
+  };
+
+  var tabs=[
+    {
+      id:'worlds', kick:'Lesson 1', title:'Healthy vs chatty',
+      plain:'A good microservice cut keeps most of a request inside one service. A bad cut turns one user action into many remote calls. That bad cut is often called a distributed monolith: many deployable boxes, still tightly glued together.',
+      watch:[
+        'Green boxes + short path = healthy cut',
+        'Red boxes + many hops = chatty cut',
+        'The glowing packet is one request traveling the call chain'
+      ],
+      why:'If you only count “number of services,” both worlds look modern. Watching the hops shows which design actually helps.',
+      caption:'Watch one request. Short path = local work. Long zigzag = waiting on the network.',
+      legend:['Green edge = healthy','Red edge = chatty','Packet = one request'],
+      mode:'healthy', showMetrics:true, showSliders:false, showFormula:false, loop:false,
+      formula:'',
+      actions:[
+        {id:'healthy', label:'Show healthy', kind:'mode', value:'healthy'},
+        {id:'chatty', label:'Show chatty', kind:'mode', value:'chatty', danger:true},
+        {id:'pulse', label:'Send a request', kind:'pulse'},
+        {id:'yaw', label:'Orbit view', kind:'yaw'}
+      ]
+    },
+    {
+      id:'rvx', kick:'Lesson 2', title:'The RVx score',
+      plain:'RVx is a simple health score for one service boundary. High means the cut is probably worth it. Low means something is wrong, and the weakest signal tells you what to fix first.',
+      watch:[
+        'Move E, S, or L and watch RVx move',
+        'If E drops, the score drops even when S looks fine',
+        'Band label: healthy / needs care / distributed monolith'
+      ],
+      why:'Arguments like “this feels too big” become a shared number. The number is a guide; your traces and git history still matter.',
+      caption:'RVx combines three checks. A low score points at the weakest check, not a vague “architecture smell.”',
+      legend:['E = less waiting','S = independent change','L = team can carry it'],
+      mode:'healthy', showMetrics:true, showSliders:true, showFormula:true, loop:false,
+      formula:'RVx_raw = (E^1.2 × S) / (L^0.8 + 0.1)   then   RVx = raw / (1 + raw)',
+      actions:[
+        {id:'pulse', label:'Send a request', kind:'pulse'},
+        {id:'reset', label:'Reset healthy', kind:'mode', value:'healthy'}
+      ]
+    },
+    {
+      id:'fulcrum', kick:'Lesson 3', title:'Fulcrum governance loop',
+      plain:'Fulcrum is the operating loop around the score: measure, decide, change, check again. Do not celebrate a redesign until Verify shows the score got better.',
+      watch:[
+        'Sense = collect E, S, L',
+        'Decide = pick band + weakest fix',
+        'Actuate = merge, async, or re-cut',
+        'Verify = re-measure before you trust it'
+      ],
+      why:'Teams often change topology and never prove the outcome. The loop makes “did this help?” a required step.',
+      caption:'Governance is a loop, not a slide. Keep a change only after Verify.',
+      legend:['Sense','Decide','Actuate','Verify'],
+      mode:'healthy', showMetrics:true, showSliders:false, showFormula:false, loop:true,
+      formula:'',
+      actions:[
+        {id:'loop', label:'Run the loop', kind:'loop'},
+        {id:'pulse', label:'Send a request', kind:'pulse'}
+      ]
+    },
+    {
+      id:'law', kick:"Lesson 4", title:"Khan's Law",
+      plain:'A boundary is only as good as its weakest side. Fast but tangled, or clean but impossible to own, still fails. Distribution multiplies pain wherever one dimension breaks.',
+      watch:[
+        'Lower only one slider and watch RVx fall',
+        'The diagnosis follows the weakest bar',
+        'High L needs special attention even when E and S look fine'
+      ],
+      why:'This stops “one great metric” theater. You need efficiency, independence, and ownability together.',
+      caption:'Weakest dimension wins. Fix that first.',
+      legend:['Weak E → merge or async','Weak S → re-cut seam','High L → shrink or re-own'],
+      mode:'healthy', showMetrics:true, showSliders:true, showFormula:true, loop:false,
+      formula:'Value follows the weakest dimension  ·  E or S near 0 collapses RVx',
+      actions:[
+        {id:'pulse', label:'Send a request', kind:'pulse'},
+        {id:'mode', label:'Healthy estate', kind:'mode', value:'healthy'}
+      ]
+    },
+    {
+      id:'paradox', kick:'Lesson 5', title:'Granularity Paradox',
+      plain:'Splitting a monolith can make life worse. If you turn an in-process call into a network call but leave the same coupling, you paid the network tax and kept the entanglement.',
+      watch:[
+        'Chatty world: many hops, red beams',
+        'Compare with the healthy short path',
+        'Same “feature,” much more waiting'
+      ],
+      why:'“More services” is not a goal. Better seams are the goal.',
+      caption:'More boxes ≠ better architecture. Watch hops without real independence.',
+      legend:['Hops without decoupling','Coupling still there','E collapses'],
+      mode:'chatty', showMetrics:true, showSliders:false, showFormula:true, loop:false,
+      formula:'Split without decoupling → network tax + leftover coupling',
+      actions:[
+        {id:'chatty', label:'Paradox world', kind:'mode', value:'chatty', danger:true},
+        {id:'healthy', label:'Healthy contrast', kind:'mode', value:'healthy'},
+        {id:'pulse', label:'Send a request', kind:'pulse'}
+      ]
+    },
+    {
+      id:'dmc', kick:'Lesson 6', title:'Cost of chatty cuts (DMC)',
+      plain:'When efficiency is low, every request wastes time waiting. Multiply that by request volume and you get wasted transaction-time. Money estimates are optional overlays; the measurable core is wasted seconds.',
+      watch:[
+        'Lower E and watch the waste factor rise',
+        'Chatty hops are the visual cause',
+        'W is time waste, not a payroll claim'
+      ],
+      why:'Cost conversations need a number tied to traces, not only cloud-bill folklore.',
+      caption:'Wasted time W grows as E falls. Same traffic, more waiting.',
+      legend:['W = N × t × (1 − E)','N = requests','t = end-to-end time'],
+      mode:'chatty', showMetrics:true, showSliders:true, showFormula:true, loop:false,
+      formula:'W = N × t_total × (1 − E)   ·   dollar overlay is illustrative only',
+      actions:[
+        {id:'chatty', label:'Chatty estate', kind:'mode', value:'chatty', danger:true},
+        {id:'pulse', label:'Send a request', kind:'pulse'}
+      ]
+    },
+    {
+      id:'scs', kick:'Lesson 7', title:'Saga style (SCS)',
+      plain:'When one business action spans many services, you choose choreography (events) or orchestration (a coordinator). SCS scores complexity × risk × interactions to make that choice less hand-wavy.',
+      watch:[
+        'Low-interaction world ≈ lighter saga',
+        'High-interaction world ≈ heavier coordination',
+        'This view is an analogy; real SCS uses C, R, and i'
+      ],
+      why:'Saga debates get religious. A score forces the team to name complexity, risk, and hop count.',
+      caption:'More risky, branched, cross-service steps → prefer a clear orchestrator.',
+      legend:['Low SCS → choreography','High SCS → orchestration','SCS ≠ RVx'],
+      mode:'healthy', showMetrics:true, showSliders:false, showFormula:true, loop:false,
+      formula:'SCS = C × R × i/(i+5)   ·   low → choreography   ·   high → orchestration',
+      actions:[
+        {id:'healthy', label:'Few interactions', kind:'mode', value:'healthy'},
+        {id:'chatty', label:'Many interactions', kind:'mode', value:'chatty', danger:true},
+        {id:'pulse', label:'Send a request', kind:'pulse'}
+      ]
+    },
+    {
+      id:'km3', kick:'Lesson 8', title:'Estate maturity (KM3)',
+      plain:'RVx scores one boundary. KM3 looks across the whole estate so leaders can prioritize the worst cuts and freeze risky boundary changes during incidents.',
+      watch:[
+        'Each box is one portfolio member',
+        'Pulse = sample the estate',
+        'Incident freeze means: stop redesigning during a fire'
+      ],
+      why:'Without portfolio view, every team optimizes locally and the company still owns a distributed monolith.',
+      caption:'Govern the estate, not one heroic service. Fix the weakest boundaries first.',
+      legend:['Portfolio view','Prioritize weakest','Freeze in incidents'],
+      mode:'healthy', showMetrics:true, showSliders:false, showFormula:true, loop:false,
+      formula:'Estate RVx → maturity reading → prioritize weakest → incident-freeze',
+      actions:[
+        {id:'pulse', label:'Sample estate', kind:'pulse'},
+        {id:'yaw', label:'Orbit estate', kind:'yaw'}
+      ]
+    },
+    {
+      id:'rvxa', kick:'Lesson 9', title:'AI tools (RVx-A)',
+      plain:'An AI agent with too many overlapping tools behaves like a distributed monolith: confused choices, extra round-trips, overloaded context. RVx-A (proposed) reuses the same idea for tool surfaces.',
+      watch:[
+        'Chatty world ≈ tool sprawl analogy',
+        'Trimmed world ≈ fewer, clearer tools',
+        'Marked proposed: not fully validated yet'
+      ],
+      why:'If you already understand microservice sprawl, agent tool sprawl is the same failure in a new costume.',
+      caption:'Too many tools ≈ too many hops. Shrink the surface the model must reason over.',
+      legend:['E_a = useful tool work','S_a = tools not redundant','L_a = context pressure'],
+      mode:'chatty', showMetrics:true, showSliders:false, showFormula:true, loop:false,
+      formula:'RVx-A = (E_a^β × S_a) / (L_a^α + ε)   ·   proposed extension',
+      actions:[
+        {id:'chatty', label:'Tool sprawl', kind:'mode', value:'chatty', danger:true},
+        {id:'healthy', label:'Trimmed tools', kind:'mode', value:'healthy'},
+        {id:'pulse', label:'Send a request', kind:'pulse'}
+      ]
+    }
+  ];
+
+  var tabsEl=document.getElementById('tabs');
+  tabs.forEach(function(t,i){
+    var b=document.createElement('button');
+    b.type='button'; b.className='tab'+(i===0?' on':'');
+    b.textContent=(i+1)+'. '+t.title;
+    b.setAttribute('role','tab'); b.dataset.id=t.id;
+    b.onclick=function(){activateTab(t.id);};
+    tabsEl.appendChild(b);
+  });
+
+  function getTab(id){
+    for(var i=0;i<tabs.length;i++) if(tabs[i].id===id) return tabs[i];
+    return tabs[0];
+  }
+
+  function renderActions(tab){
+    var box=document.getElementById('detailActions');
+    box.innerHTML='';
+    tab.actions.forEach(function(a){
+      var b=document.createElement('button');
+      b.type='button'; b.className='btn'+(a.danger?' danger':'');
+      b.textContent=a.label;
+      if(a.kind==='mode' && state.mode===a.value) b.classList.add('on');
+      b.onclick=function(){
+        if(a.kind==='mode') setMode(a.value);
+        else if(a.kind==='pulse') pulseTraffic(true);
+        else if(a.kind==='yaw'){
+          state.yaw = state.yaw < 0 ? 18 : -12;
+          scene.style.setProperty('--yaw', state.yaw+'deg');
+          setCaption('<em>Live:</em> Orbiting the estate so you can see the call graph in 3D.');
+        }
+        else if(a.kind==='loop') playLoop();
+        renderActions(getTab(state.tab));
+      };
+      box.appendChild(b);
+    });
+  }
+
+  function activateTab(id){
+    state.tab=id;
+    var tab=getTab(id);
+    Array.prototype.forEach.call(tabsEl.children,function(c){
+      c.classList.toggle('on', c.dataset.id===id);
+    });
+    document.getElementById('detailKick').textContent=tab.kick;
+    document.getElementById('detailTitle').textContent=tab.title;
+    document.getElementById('plainText').textContent=tab.plain;
+    document.getElementById('whyText').textContent=tab.why;
+    var ul=document.getElementById('watchList');
+    ul.innerHTML='';
+    tab.watch.forEach(function(item){
+      var li=document.createElement('li'); li.textContent=item; ul.appendChild(li);
+    });
+    var legend=document.getElementById('legend');
+    legend.innerHTML='';
+    tab.legend.forEach(function(item){
+      var s=document.createElement('span'); s.textContent=item; legend.appendChild(s);
+    });
+    setCaption('<em>Live:</em> '+tab.caption);
+    document.getElementById('metrics').classList.toggle('show', !!tab.showMetrics);
+    document.getElementById('sliders').classList.toggle('show', !!tab.showSliders);
+    var formula=document.getElementById('formula');
+    formula.classList.toggle('show', !!tab.showFormula);
+    formula.textContent=tab.formula||'';
+    renderActions(tab);
+    if(tab.loop){
+      setMode(tab.mode, true);
+      playLoop();
+    } else {
+      stopLoop();
+      setMode(tab.mode);
+    }
+  }
+
+  function nodeEl(n){
+    var d=document.createElement('div');
+    d.className='node '+(state.mode==='healthy'?'healthy':'chatty');
+    d.style.left=n.x+'%'; d.style.top=n.y+'%'; d.dataset.id=n.id;
+    d.innerHTML='<div class="face"><div class="label">'+n.label+'</div><div class="sub">'+n.sub+'</div></div>';
+    d.onclick=function(){pulseOnce(true);};
+    return d;
+  }
+  function beamBetween(a,b,hot){
+    var el=document.createElement('div');
+    el.className='beam'+(hot?' hot':'');
+    var dx=b.x-a.x, dy=b.y-a.y;
+    var len=Math.sqrt(dx*dx+dy*dy);
+    var ang=Math.atan2(dy,dx)*180/Math.PI;
+    el.style.left=a.x+'%'; el.style.top=a.y+'%';
+    el.style.width=len+'%';
+    el.style.transform='rotate('+ang+'deg)';
+    return el;
+  }
+  function rebuild(skipPreset){
+    graph.innerHTML='';
+    var nodes=layouts[state.mode], map={};
+    nodes.forEach(function(n){map[n.id]=n; graph.appendChild(nodeEl(n));});
+    edges[state.mode].forEach(function(e){
+      graph.appendChild(beamBetween(map[e[0]], map[e[1]], state.mode==='chatty'));
+    });
+    if(!skipPreset){
+      if(state.mode==='healthy'){state.E=0.85; state.S=0.80; state.L=0.30;}
+      else {state.E=0.28; state.S=0.32; state.L=0.68;}
+    }
+    syncSliders(); updateHud();
+  }
+
+  function syncSliders(){
+    document.getElementById('e').value=state.E;
+    document.getElementById('s').value=state.S;
+    document.getElementById('l').value=state.L;
+    document.getElementById('ev').textContent=state.E.toFixed(2);
+    document.getElementById('sv').textContent=state.S.toFixed(2);
+    document.getElementById('lv').textContent=state.L.toFixed(2);
+  }
+  function updateHud(){
+    var E=state.E,S=state.S,L=state.L, score=rvx(E,S,L), b=band(score), w=weakest(E,S,L);
+    document.querySelector('#mE b').textContent=E.toFixed(2);
+    document.querySelector('#mS b').textContent=S.toFixed(2);
+    document.querySelector('#mL b').textContent=L.toFixed(2);
+    document.querySelector('#mR b').textContent=score.toFixed(2);
+    document.getElementById('mR').className='metric-card '+b[2];
+    document.getElementById('barE').style.width=(E*100)+'%';
+    document.getElementById('barS').style.width=(S*100)+'%';
+    document.getElementById('barL').style.width=(L*100)+'%';
+    var bandEl=document.getElementById('band');
+    bandEl.textContent=b[0]; bandEl.style.background=b[1];
+    var tab=getTab(state.tab);
+    if(tab.id==='dmc'){
+      var waste=(1-E);
+      document.getElementById('formula').textContent=
+        'With E='+E.toFixed(2)+', about '+(waste*100).toFixed(0)+'% of each request is overhead wait  ·  weakest: '+weakestPlain(w);
+    } else if(tab.showFormula && (tab.id==='rvx' || tab.id==='law')){
+      document.getElementById('formula').textContent=
+        'RVx = '+score.toFixed(2)+' ('+b[0]+')  ·  fix first: '+weakestPlain(w);
+      if(tab.id==='rvx' || tab.id==='law'){
+        setCaption('<em>Live:</em> Score '+score.toFixed(2)+' · '+b[0]+'. First fix: '+weakestPlain(w)+'.');
+      }
+    }
+  }
+
+  function animPacket(path, bad){
+    if(!path.length) return;
+    var pkt=document.createElement('div');
+    pkt.className='packet'+(bad?' bad':'');
+    graph.appendChild(pkt);
+    var i=0;
+    function step(){
+      if(i>=path.length-1){
+        var last=path[path.length-1];
+        var r=graph.getBoundingClientRect();
+        spawnBurst(r.left+r.width*(last.x/100), r.top+r.height*(last.y/100), bad);
+        pkt.remove(); return;
+      }
+      var a=path[i], b=path[i+1], t0=null, dur=bad?280:420;
+      function frame(ts){
+        if(!t0)t0=ts; var p=Math.min(1,(ts-t0)/dur);
+        var ease=1-Math.pow(1-p,3);
+        pkt.style.left=(a.x+(b.x-a.x)*ease)+'%';
+        pkt.style.top=(a.y+(b.y-a.y)*ease)+'%';
+        if(p<1) requestAnimationFrame(frame); else {i++; step();}
+      }
+      requestAnimationFrame(frame);
+    }
+    step();
+  }
+  function pathFromEdges(){
+    var nodes=layouts[state.mode], map={}; nodes.forEach(function(n){map[n.id]=n;});
+    return edges[state.mode].map(function(e){return [map[e[0]], map[e[1]]];}).reduce(function(acc,seg,idx){
+      if(idx===0) acc.push(seg[0]);
+      acc.push(seg[1]); return acc;
+    },[]);
+  }
+  function pulseOnce(narrate){
+    if(narrate){
+      if(state.mode==='healthy'){
+        setCaption('<em>Live:</em> One request, few hops. Most time is useful work inside Orders, not network wait.');
+      } else {
+        setCaption('<em>Live:</em> Same user action, many hops. Each red hop adds wait. This is the distributed-monolith feeling.');
+      }
+    }
+    animPacket(pathFromEdges(), state.mode==='chatty');
+  }
+  function pulseTraffic(narrate){
+    var n=state.mode==='chatty'?5:3;
+    if(narrate) pulseOnce(true);
+    for(var i=(narrate?1:0);i<n;i++) setTimeout(function(){pulseOnce(false);}, i*180);
+  }
+
+  var loopSteps=[
+    {label:'SENSE', ang:-90},
+    {label:'DECIDE', ang:0},
+    {label:'ACTUATE', ang:90},
+    {label:'VERIFY', ang:180}
+  ];
+  function buildLoop(){
+    var ring=document.getElementById('loopRing');
+    ring.innerHTML='';
+    loopSteps.forEach(function(s,i){
+      var el=document.createElement('div');
+      el.className='loop-node'; el.id='loop'+i; el.textContent=s.label;
+      var rad=s.ang*Math.PI/180;
+      el.style.left=(50+Math.cos(rad)*42)+'%';
+      el.style.top=(50+Math.sin(rad)*42)+'%';
+      ring.appendChild(el);
+    });
+  }
+  buildLoop();
+  var loopTimer=null;
+  function stopLoop(){
+    state.loopOn=false; world.classList.remove('mode-loop');
+    if(loopTimer){clearInterval(loopTimer); loopTimer=null;}
+    for(var j=0;j<4;j++){
+      var n=document.getElementById('loop'+j);
+      if(n) n.classList.remove('active');
+    }
+  }
+  function playLoop(){
+    state.loopOn=true; world.classList.add('mode-loop');
+    var i=0;
+    function mark(k){
+      for(var j=0;j<4;j++) document.getElementById('loop'+j).classList.toggle('active', j===k);
+    }
+    mark(0);
+    if(loopTimer) clearInterval(loopTimer);
+    var msgs=[
+      'Sense: gather traces (E), git co-change (S), and team load (L).',
+      'Decide: read the RVx band and name the weakest fix.',
+      'Actuate: merge, make async, re-cut, or re-own — carefully.',
+      'Verify: measure again. Keep the change only if health improved.'
+    ];
+    setCaption('<em>Live:</em> '+msgs[0]);
+    loopTimer=setInterval(function(){
+      i++;
+      if(i>=4){
+        clearInterval(loopTimer); loopTimer=null; mark(-1);
+        state.loopOn=false; world.classList.remove('mode-loop');
+        setCaption('<em>Live:</em> Loop complete. No redesign is “done” until Verify says RVx got better.');
+        return;
+      }
+      mark(i);
+      setCaption('<em>Live:</em> '+msgs[i]);
+    },1300);
+  }
+
+  function setMode(m, skipPulse){
+    state.mode=m;
+    rebuild(false);
+    renderActions(getTab(state.tab));
+    if(!skipPulse){
+      if(m==='healthy') setCaption('<em>Live:</em> Healthy cut loaded. Press “Send a request” and count the hops.');
+      else setCaption('<em>Live:</em> Chatty cut loaded. Press “Send a request” and feel the zigzag.');
+      pulseTraffic(false);
+    }
+  }
+
+  ['e','s','l'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', function(){
+      state.E=clamp(document.getElementById('e').value);
+      state.S=clamp(document.getElementById('s').value);
+      state.L=clamp(document.getElementById('l').value);
+      syncSliders(); updateHud();
+    });
+  });
+
+  var auto=0;
+  setInterval(function(){
+    auto+=0.15;
+    if(!document.hidden && !state.loopOn){
+      scene.style.setProperty('--yaw', (state.yaw + Math.sin(auto*Math.PI/180)*4)+'deg');
+    }
+  }, 40);
+
+  activateTab('worlds');
+})();
+</script>
+</body>
+</html>
