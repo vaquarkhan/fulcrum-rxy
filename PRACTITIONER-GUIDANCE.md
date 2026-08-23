@@ -51,12 +51,6 @@ and measure all three before and after you cut.**
 Cut the **synchronous cross-boundary calls**. Efficiency was the strongest single predictor of
 real latency; prefer asynchronous or merged interactions over chatty synchronous fan-out.
 
-## Honest caveat
-
-This guidance is principled and partially evidence-backed: on real AWS each signal predicted its
-target outcome and fusing the three was more robust than any single one. Full predictive validation
-on organically-grown production systems over time is still future work, so treat thresholds as
-directional and **calibrate them to your own estate** rather than as universal constants.
 
 ---
 

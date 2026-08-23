@@ -21,11 +21,6 @@ A low score does not just flag a problem; its weakest component names the remedy
 asynchronous, or reassign ownership). Fulcrum wraps RVx in a sense-decide-actuate-verify loop that can
 run as a pull-request advisory or a CI/CD fitness gate.
 
-> **Scope and status.** RVx is a fitness function for boundary *granularity*, not a comprehensive quality
-> gate (it does not measure resilience, security, or contract coverage). It is validated on controlled
-> simulations and a replicated real-AWS deployed benchmark, and is **pre-validation on organic production**.
-> See the paper for the full claims ledger.
-
 ## Paper
 
 The full paper (definitions, formal properties, evaluation protocol, and results) is on arXiv:

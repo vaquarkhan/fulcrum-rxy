@@ -45,11 +45,6 @@ tools, collapsing toward ~0.13 near ~107 tools). Result:
   and magnitude class as the published filtered-subset gains.
 - **Not proven:** anything about a live LLM. This is a calibrated model, not an evaluation.
 
-## Honest status
-
-These experiments move the paper's claims from "asserted" to "demonstrated on controlled
-models." They are the mechanism proof. They are not the production validation, which needs
-a real labeled corpus (microservice core) and a live agent benchmark (RVx-A).
 
 ---
 
