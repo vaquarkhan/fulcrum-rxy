@@ -21,3 +21,9 @@ build/
 *.pem
 *aws-credentials*
 .aws/
+aws_validation_report.json
+validation_report.json
+_invoke_payload.json
+
+# Local paper copies (published separately on arXiv)
+*.pdf

@@ -1,0 +1,380 @@
+# Author: Viquar Khan (ORCID 0009-0008-3592-4162). Part of the Fulcrum / RVx project.
+# Uses AWS pseudo-parameters (AWS::AccountId, AWS::Region); no account id is hardcoded.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Fulcrum RVx validation app stack. Deploys real Lambda service boundaries (healthy and
+  distributed-monolith topologies) with X-Ray Active tracing so Kinetic Efficiency (E) is
+  measurable on a real distributed system. Least-privilege IAM. No public endpoints.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: fulcrum-rvx
+
+Resources:
+
+  LeafExecRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-leaf-exec'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: logs-and-xray
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-*'
+              - Effect: Allow
+                Action: [xray:PutTraceSegments, xray:PutTelemetryRecords]
+                Resource: '*'
+
+  BoundaryExecRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-boundary-exec'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: logs-xray-invoke
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-*'
+              - Effect: Allow
+                Action: [xray:PutTraceSegments, xray:PutTelemetryRecords]
+                Resource: '*'
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-leaf'
+
+  LeafFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-leaf'
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt LeafExecRole.Arn
+      Timeout: 30
+      MemorySize: 256
+      TracingConfig: { Mode: Active }
+      Environment:
+        Variables: { SVC: leaf, USEFUL_MS: '4', HOPS: '0', LEAF_ARN: '' }
+      Code:
+        ZipFile: |
+          import os, time
+          U = float(os.environ.get("USEFUL_MS", "20"))
+          H = int(os.environ.get("HOPS", "0"))
+          LEAF = os.environ.get("LEAF_ARN", "")
+          _lam = None
+          def burn(ms):
+              end = time.perf_counter() + ms / 1000.0
+              x = 0
+              while time.perf_counter() < end:
+                  x += 1
+              return x
+          def handler(event, ctx):
+              global _lam
+              t0 = time.perf_counter()
+              u0 = time.perf_counter(); burn(U); useful = time.perf_counter() - u0
+              for _ in range(H):
+                  if LEAF:
+                      try:
+                          import boto3
+                          if _lam is None:
+                              _lam = boto3.client("lambda")
+                          _lam.invoke(FunctionName=LEAF, InvocationType="RequestResponse", Payload=b"{}")
+                      except Exception:
+                          pass
+              total = time.perf_counter() - t0
+              return {"service": os.environ.get("SVC"), "E": (useful / total) if total > 0 else None,
+                      "useful": useful, "total": total}
+
+  StandaloneFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-standalone'
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt BoundaryExecRole.Arn
+      Timeout: 30
+      MemorySize: 256
+      TracingConfig: { Mode: Active }
+      Environment:
+        Variables: { SVC: standalone, USEFUL_MS: '40', HOPS: '0', LEAF_ARN: '' }
+      Code:
+        ZipFile: |
+          import os, time
+          U = float(os.environ.get("USEFUL_MS", "20"))
+          H = int(os.environ.get("HOPS", "0"))
+          LEAF = os.environ.get("LEAF_ARN", "")
+          _lam = None
+          def burn(ms):
+              end = time.perf_counter() + ms / 1000.0
+              x = 0
+              while time.perf_counter() < end:
+                  x += 1
+              return x
+          def handler(event, ctx):
+              global _lam
+              t0 = time.perf_counter()
+              u0 = time.perf_counter(); burn(U); useful = time.perf_counter() - u0
+              for _ in range(H):
+                  if LEAF:
+                      try:
+                          import boto3
+                          if _lam is None:
+                              _lam = boto3.client("lambda")
+                          _lam.invoke(FunctionName=LEAF, InvocationType="RequestResponse", Payload=b"{}")
+                      except Exception:
+                          pass
+              total = time.perf_counter() - t0
+              return {"service": os.environ.get("SVC"), "E": (useful / total) if total > 0 else None,
+                      "useful": useful, "total": total}
+
+  AggregatorFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-aggregator'
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt BoundaryExecRole.Arn
+      Timeout: 30
+      MemorySize: 256
+      TracingConfig: { Mode: Active }
+      Environment:
+        Variables:
+          SVC: aggregator
+          USEFUL_MS: '40'
+          HOPS: '1'
+          LEAF_ARN: !GetAtt LeafFunction.Arn
+      Code:
+        ZipFile: |
+          import os, time
+          U = float(os.environ.get("USEFUL_MS", "20"))
+          H = int(os.environ.get("HOPS", "0"))
+          LEAF = os.environ.get("LEAF_ARN", "")
+          _lam = None
+          def burn(ms):
+              end = time.perf_counter() + ms / 1000.0
+              x = 0
+              while time.perf_counter() < end:
+                  x += 1
+              return x
+          def handler(event, ctx):
+              global _lam
+              t0 = time.perf_counter()
+              u0 = time.perf_counter(); burn(U); useful = time.perf_counter() - u0
+              for _ in range(H):
+                  if LEAF:
+                      try:
+                          import boto3
+                          if _lam is None:
+                              _lam = boto3.client("lambda")
+                          _lam.invoke(FunctionName=LEAF, InvocationType="RequestResponse", Payload=b"{}")
+                      except Exception:
+                          pass
+              total = time.perf_counter() - t0
+              return {"service": os.environ.get("SVC"), "E": (useful / total) if total > 0 else None,
+                      "useful": useful, "total": total}
+
+  ReporterFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-reporter'
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt BoundaryExecRole.Arn
+      Timeout: 30
+      MemorySize: 256
+      TracingConfig: { Mode: Active }
+      Environment:
+        Variables:
+          SVC: reporter
+          USEFUL_MS: '35'
+          HOPS: '1'
+          LEAF_ARN: !GetAtt LeafFunction.Arn
+      Code:
+        ZipFile: |
+          import os, time
+          U = float(os.environ.get("USEFUL_MS", "20"))
+          H = int(os.environ.get("HOPS", "0"))
+          LEAF = os.environ.get("LEAF_ARN", "")
+          _lam = None
+          def burn(ms):
+              end = time.perf_counter() + ms / 1000.0
+              x = 0
+              while time.perf_counter() < end:
+                  x += 1
+              return x
+          def handler(event, ctx):
+              global _lam
+              t0 = time.perf_counter()
+              u0 = time.perf_counter(); burn(U); useful = time.perf_counter() - u0
+              for _ in range(H):
+                  if LEAF:
+                      try:
+                          import boto3
+                          if _lam is None:
+                              _lam = boto3.client("lambda")
+                          _lam.invoke(FunctionName=LEAF, InvocationType="RequestResponse", Payload=b"{}")
+                      except Exception:
+                          pass
+              total = time.perf_counter() - t0
+              return {"service": os.environ.get("SVC"), "E": (useful / total) if total > 0 else None,
+                      "useful": useful, "total": total}
+
+  ChattyAFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-chatty-a'
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt BoundaryExecRole.Arn
+      Timeout: 30
+      MemorySize: 256
+      TracingConfig: { Mode: Active }
+      Environment:
+        Variables:
+          SVC: chatty-a
+          USEFUL_MS: '4'
+          HOPS: '8'
+          LEAF_ARN: !GetAtt LeafFunction.Arn
+      Code:
+        ZipFile: |
+          import os, time
+          U = float(os.environ.get("USEFUL_MS", "20"))
+          H = int(os.environ.get("HOPS", "0"))
+          LEAF = os.environ.get("LEAF_ARN", "")
+          _lam = None
+          def burn(ms):
+              end = time.perf_counter() + ms / 1000.0
+              x = 0
+              while time.perf_counter() < end:
+                  x += 1
+              return x
+          def handler(event, ctx):
+              global _lam
+              t0 = time.perf_counter()
+              u0 = time.perf_counter(); burn(U); useful = time.perf_counter() - u0
+              for _ in range(H):
+                  if LEAF:
+                      try:
+                          import boto3
+                          if _lam is None:
+                              _lam = boto3.client("lambda")
+                          _lam.invoke(FunctionName=LEAF, InvocationType="RequestResponse", Payload=b"{}")
+                      except Exception:
+                          pass
+              total = time.perf_counter() - t0
+              return {"service": os.environ.get("SVC"), "E": (useful / total) if total > 0 else None,
+                      "useful": useful, "total": total}
+
+  ChattyBFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-chatty-b'
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt BoundaryExecRole.Arn
+      Timeout: 30
+      MemorySize: 256
+      TracingConfig: { Mode: Active }
+      Environment:
+        Variables:
+          SVC: chatty-b
+          USEFUL_MS: '3'
+          HOPS: '10'
+          LEAF_ARN: !GetAtt LeafFunction.Arn
+      Code:
+        ZipFile: |
+          import os, time
+          U = float(os.environ.get("USEFUL_MS", "20"))
+          H = int(os.environ.get("HOPS", "0"))
+          LEAF = os.environ.get("LEAF_ARN", "")
+          _lam = None
+          def burn(ms):
+              end = time.perf_counter() + ms / 1000.0
+              x = 0
+              while time.perf_counter() < end:
+                  x += 1
+              return x
+          def handler(event, ctx):
+              global _lam
+              t0 = time.perf_counter()
+              u0 = time.perf_counter(); burn(U); useful = time.perf_counter() - u0
+              for _ in range(H):
+                  if LEAF:
+                      try:
+                          import boto3
+                          if _lam is None:
+                              _lam = boto3.client("lambda")
+                          _lam.invoke(FunctionName=LEAF, InvocationType="RequestResponse", Payload=b"{}")
+                      except Exception:
+                          pass
+              total = time.perf_counter() - t0
+              return {"service": os.environ.get("SVC"), "E": (useful / total) if total > 0 else None,
+                      "useful": useful, "total": total}
+
+  CoupledFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-coupled'
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt BoundaryExecRole.Arn
+      Timeout: 30
+      MemorySize: 256
+      TracingConfig: { Mode: Active }
+      Environment:
+        Variables:
+          SVC: coupled
+          USEFUL_MS: '5'
+          HOPS: '6'
+          LEAF_ARN: !GetAtt LeafFunction.Arn
+      Code:
+        ZipFile: |
+          import os, time
+          U = float(os.environ.get("USEFUL_MS", "20"))
+          H = int(os.environ.get("HOPS", "0"))
+          LEAF = os.environ.get("LEAF_ARN", "")
+          _lam = None
+          def burn(ms):
+              end = time.perf_counter() + ms / 1000.0
+              x = 0
+              while time.perf_counter() < end:
+                  x += 1
+              return x
+          def handler(event, ctx):
+              global _lam
+              t0 = time.perf_counter()
+              u0 = time.perf_counter(); burn(U); useful = time.perf_counter() - u0
+              for _ in range(H):
+                  if LEAF:
+                      try:
+                          import boto3
+                          if _lam is None:
+                              _lam = boto3.client("lambda")
+                          _lam.invoke(FunctionName=LEAF, InvocationType="RequestResponse", Payload=b"{}")
+                      except Exception:
+                          pass
+              total = time.perf_counter() - t0
+              return {"service": os.environ.get("SVC"), "E": (useful / total) if total > 0 else None,
+                      "useful": useful, "total": total}
+
+Outputs:
+  BoundaryFunctions:
+    Description: Comma-separated boundary function names (scored by the RVx gate)
+    Value: !Sub '${ProjectName}-standalone,${ProjectName}-aggregator,${ProjectName}-reporter,${ProjectName}-chatty-a,${ProjectName}-chatty-b,${ProjectName}-coupled'
