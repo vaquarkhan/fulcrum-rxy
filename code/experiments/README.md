@@ -8,11 +8,11 @@ benchmark remains the next step (paper Section 12).
 
 ## Files
 
-- `fulcrum_core.py` — the RVx scorer plus every competing composition form (additive,
+- `fulcrum_core.py` - the RVx scorer plus every competing composition form (additive,
   hard-minimum, geometric-mean, numerator-load, single-signal) and stdlib metrics
   (rank AUC, Spearman).
-- `exp1_discrimination.py` — the Section 12.3 ablation as a non-circular experiment.
-- `exp2_agentic.py` — RVx-A for MCP tool boundaries, calibrated to the published
+- `exp1_discrimination.py` - the Section 12.3 ablation as a non-circular experiment.
+- `exp2_agentic.py` - RVx-A for MCP tool boundaries, calibrated to the published
   tool-selection collapse.
 
 ## What Experiment 1 proves (and does not)
@@ -50,3 +50,7 @@ tools, collapsing toward ~0.13 near ~107 tools). Result:
 These experiments move the paper's claims from "asserted" to "demonstrated on controlled
 models." They are the mechanism proof. They are not the production validation, which needs
 a real labeled corpus (microservice core) and a live agent benchmark (RVx-A).
+
+---
+
+*Author: Viquar Khan (ORCID [0009-0008-3592-4162](https://orcid.org/0009-0008-3592-4162)). Copyright 2026 Viquar Khan.*

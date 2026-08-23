@@ -78,8 +78,8 @@
       Measure from <b>distributed traces</b> (AWS X-Ray or OpenTelemetry). For a representative sample of
       transactions crossing the boundary, <code>E = sum(useful local compute time) / sum(total transaction time)</code>,
       where waiting on remote calls, serialization, and network are overhead (not useful).
-      Code that computes it: <a href="https://github.com/vaquarkhan/fulcrum-rvx/blob/main/code/aws_validation_harness.py">aws_validation_harness.py</a>
-      (X-Ray parser) and <a href="https://github.com/vaquarkhan/fulcrum-rvx/blob/main/code/aws-prod-validation/run_study.py">run_study.py</a>.
+      Code that computes it: <a href="https://github.com/vaquarkhan/fulcrum-rxy/blob/main/code/aws-prod-validation/run_study.py">run_study.py</a>
+      (AWS Lambda) and <a href="https://github.com/vaquarkhan/fulcrum-rxy/blob/main/code/testbed/run_testbed.py">run_testbed.py</a> (local HTTP testbed).
     </div></details>
     <div class="row"><label>Semantic Distinctness (S)<div class="desc">1 = evolves independently. 0 = always changes with neighbors.</div></label>
       <input type="range" id="S" min="0" max="1" step="0.01" value="0.6"><span class="val" id="Sv">0.60</span></div>
@@ -87,7 +87,7 @@
       Measure from <b>version-control co-change</b> over a trailing window (e.g. 12 months).
       <code>S = 1 - (change sets touching both sides of the cut) / (change sets touching this service)</code>.
       Use intent-unit change sets and drop mechanical repo-wide commits (monorepos deflate S).
-      Code: <a href="https://github.com/vaquarkhan/fulcrum-rvx/blob/main/code/git_scl_scan.py">git_scl_scan.py</a>.
+      Code: <a href="https://github.com/vaquarkhan/fulcrum-rxy/blob/main/code/aws-prod-validation/gen_git_history.py">gen_git_history.py</a>.
     </div></details>
     <div class="row"><label>Cognitive Load (L)<div class="desc">0 = easy for the team. 1 = overwhelming.</div></label>
       <input type="range" id="L" min="0" max="1" step="0.01" value="0.4"><span class="val" id="Lv">0.40</span></div>
@@ -95,8 +95,8 @@
       <code>L = clamp(static complexity / team capacity, 0, 1)</code>. Complexity from LOC, file count, and
       (for serverless) code size / memory / config; capacity from the owning team's effective size. With no
       trustworthy capacity source, hold it constant and report the run as <i>structural</i> (requirement N16).
-      Code: <a href="https://github.com/vaquarkhan/fulcrum-rvx/blob/main/code/git_scl_scan.py">git_scl_scan.py</a>
-      (source) and <a href="https://github.com/vaquarkhan/fulcrum-rvx/blob/main/code/aws_portfolio_scan.py">aws_portfolio_scan.py</a> (Lambda config).
+      Code: <a href="https://github.com/vaquarkhan/fulcrum-rxy/blob/main/code/aws-prod-validation/run_study.py">run_study.py</a>
+      (<code>measure_L</code> from deployed Lambda config).
     </div></details>
     <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
     <div class="score">
@@ -114,7 +114,7 @@
       <input type="range" id="n" min="1" max="200" step="1" value="20"><span class="val" id="nv">20</span></div>
     <details class="how"><summary>&#9432; How to get n</summary><div class="body">
       Count the tools/functions exposed to the agent in one request, i.e. the length of the MCP tool list
-      (or the function schema array) the model must choose among. Model: <a href="https://github.com/vaquarkhan/fulcrum-rvx/blob/main/code/experiments/exp2_agentic.py">exp2_agentic.py</a>.
+      (or the function schema array) the model must choose among. Model: <a href="https://github.com/vaquarkhan/fulcrum-rxy/blob/main/code/experiments/exp2_agentic.py">exp2_agentic.py</a>.
     </div></details>
     <div class="row"><label>Tool Distinctness (S_a)<div class="desc">1 = no overlapping/redundant tools.</div></label>
       <input type="range" id="Sa" min="0.1" max="1" step="0.01" value="0.9"><span class="val" id="Sav">0.90</span></div>
@@ -190,7 +190,7 @@ legacy-orders,0.32,0.45,0.70</textarea>
 
 <footer>
   <a href="index.html">&larr; Home</a> &nbsp;&middot;&nbsp;
-  <a href="https://github.com/vaquarkhan/fulcrum-rvx">GitHub repo</a> &nbsp;&middot;&nbsp;
+  <a href="https://github.com/vaquarkhan/fulcrum-rxy">GitHub repo</a> &nbsp;&middot;&nbsp;
   <a href="https://github.com/vaquarkhan/microservices-recipes-a-free-gitbook">Microservices Recipes (free book, since 2017)</a> &nbsp;&middot;&nbsp;
   <a href="index.html#paper">Paper</a><br>
   Copyright &copy; 2026 Viquar Khan. Fulcrum and The Khan Microservice Granularity Pattern.

@@ -13,3 +13,7 @@ python teardown_all.py             # delete all AWS resources when done
 ```
 
 Use a dev AWS account with least-privilege credentials. Never commit account IDs or credentials.
+
+---
+
+*Author: Viquar Khan (ORCID [0009-0008-3592-4162](https://orcid.org/0009-0008-3592-4162)). Copyright 2026 Viquar Khan.*

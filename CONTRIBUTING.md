@@ -33,6 +33,7 @@ Good targets, in rough priority:
 ## Ground rules
 
 - **Never commit credentials, account IDs, or customer data.** Anonymize before submitting.
+- **Do not commit PDF copies of the paper.** Publish on arXiv; this repo holds code and docs only.
 - Keep the core experiments dependency-free (Python stdlib) where possible.
 - Match the paper's honest-labeling discipline: state what is proved, demonstrated, or hypothesized.
 - Code contributions are licensed under Apache-2.0; documentation under CC BY 4.0 (see LICENSE files).
@@ -40,3 +41,7 @@ Good targets, in rough priority:
 ## Questions
 
 Open an issue or reach the author at vaquar.khan@gmail.com.
+
+---
+
+*Author: Viquar Khan (ORCID [0009-0008-3592-4162](https://orcid.org/0009-0008-3592-4162)). Copyright 2026 Viquar Khan.*

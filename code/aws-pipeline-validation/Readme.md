@@ -39,3 +39,7 @@ python push_to_codecommit.py
 - `validate_gate.py` is read + invoke only (Lambda invoke, CloudWatch metrics, STS identity).
 - Deploying the CloudFormation stacks **creates** AWS resources and incurs cost. Use a dev account only.
 - Run `teardown_all.py` from `../aws-prod-validation/` after population studies; pipeline stacks are torn down separately.
+
+---
+
+*Author: Viquar Khan (ORCID [0009-0008-3592-4162](https://orcid.org/0009-0008-3592-4162)). Copyright 2026 Viquar Khan.*

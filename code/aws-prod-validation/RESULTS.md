@@ -31,3 +31,7 @@
 ## Headline
 
 Most robust scorer by worst-case AUC across domains: **efficiency only (E)** (worst-case 0.672).
+
+---
+
+*Author: Viquar Khan (ORCID [0009-0008-3592-4162](https://orcid.org/0009-0008-3592-4162)). Copyright 2026 Viquar Khan.*

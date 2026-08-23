@@ -9,9 +9,9 @@ Fulcrum fuses three signals normally analyzed in isolation into one bounded, dia
 score, the **RVx Index**, that tells you whether a service boundary adds value or is a distributed
 monolith:
 
-- **Kinetic Efficiency (E)** — runtime overhead from distributed traces (useful time / total time).
-- **Semantic Distinctness (S)** — evolutionary independence from version-control co-change.
-- **Cognitive Load (L)** — maintenance complexity normalized against team capacity (Conway's Law made measurable).
+- **Kinetic Efficiency (E)** - runtime overhead from distributed traces (useful time / total time).
+- **Semantic Distinctness (S)** - evolutionary independence from version-control co-change.
+- **Cognitive Load (L)** - maintenance complexity normalized against team capacity (Conway's Law made measurable).
 
 ```
 RVx_raw = (E^beta * S) / (L^alpha + epsilon)      RVx = RVx_raw / (1 + RVx_raw)
@@ -34,7 +34,7 @@ The full paper (definitions, formal properties, evaluation protocol, and results
 > **Viquar Khan.** *Fulcrum: Quantitative, Governed Granularity for Microservice Boundaries with the RVx Index.* 2026. ORCID [0009-0008-3592-4162](https://orcid.org/0009-0008-3592-4162).
 
 **Provenance.** This is the rigorous research treatment of ideas developed openly since 2017 in the
-free field guide [Microservices Recipes — The Architect's Field Guide](https://github.com/vaquarkhan/microservices-recipes-a-free-gitbook),
+free field guide [Microservices Recipes - The Architect's Field Guide](https://github.com/vaquarkhan/microservices-recipes-a-free-gitbook),
 where Fulcrum appears as the Adaptive Granularity Governance chapter.
 
 ## Try it
@@ -90,3 +90,7 @@ anonymized feature table (see `CONTRIBUTING.md`). Never commit credentials, acco
 
 Code under Apache-2.0 (`LICENSE`). Documentation and figures under CC BY 4.0 (`LICENSE-docs`).
 Cite via `CITATION.cff`.
+
+---
+
+*Author: Viquar Khan (ORCID [0009-0008-3592-4162](https://orcid.org/0009-0008-3592-4162)). Copyright 2026 Viquar Khan.*
