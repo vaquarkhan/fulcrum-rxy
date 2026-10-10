@@ -1,5 +1,8 @@
 # Fulcrum &middot; The RVx Index
 
+Full paper - https://zenodo.org/records/23284522
+
+
 **A quantitative, governed fitness function for microservice boundary granularity.**
 
 This repository holds the **code, the interactive calculator, and the reproducible validation harness**.
